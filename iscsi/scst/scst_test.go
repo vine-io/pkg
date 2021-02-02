@@ -2,6 +2,9 @@ package scst
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -17,6 +20,28 @@ func TestFromCfgFile(t *testing.T) {
 
 	v, _ := json.MarshalIndent(s, "", " ")
 	t.Log(string(v))
+}
+
+func TestFromKernel(t *testing.T) {
+	root := "/Users/xingyys/project/gopath/src/github.com/lack-io/pkg/"
+	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		path = strings.TrimPrefix(path, root)
+		//if strings.HasPrefix(path, ".") {
+		//	return nil
+		//}
+		//parts := strings.Split(path, "/")
+		if info.IsDir() {
+			return nil
+		}
+		t.Log(path, info.Name())
+
+		return nil
+	})
+
 }
 
 func TestSystem_ToCfg(t *testing.T) {
@@ -49,7 +74,7 @@ func ExampleNewCtl() {
 
 	// AddInit
 	NewCtl(scst).
-		AddLun("iqn.1991-05.com.microsoft:win-1bp99fqu2ri").
+		AddInit("iqn.1991-05.com.microsoft:win-1bp99fqu2ri").
 		Target("iqn.2018-11.com.example.vol").
 		Driver("iscsi").
 		Group("vol_group").

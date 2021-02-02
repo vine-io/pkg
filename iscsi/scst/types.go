@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
@@ -410,6 +412,47 @@ func FromCfgFile(cfg string) (*System, error) {
 	return &system, nil
 }
 
+// FromKernel get System by scan linux kernel
+func FromKernel() (*System, error) {
+	system := System{}
+
+	root := "/sys/kernel/scst_tgt/"
+	_, err := os.Stat(root)
+	if os.IsNotExist(err) {
+		return nil, ErrNoScst
+	}
+
+	var parent, kind string
+	//var handlerPtr, devicePtr, driverPtr, targetPtr, groupPtr string
+	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		subPath := strings.TrimPrefix(path, root)
+		if strings.HasPrefix(subPath, ".") {
+			return nil
+		}
+
+		name := info.Name()
+		parts := strings.Split(subPath, "/")
+		switch {
+		case info.IsDir() && len(parts) == 0:
+			parent, kind = _Handler, _Handler
+		case parent == _Handler && name == "version":
+			system.Version = readHeader(path)
+		case parent == _Handler && info.IsDir() && name == "devices":
+			kind = _Device
+		}
+		_ = kind
+		_ = parent
+
+		return nil
+	})
+	return &system, err
+}
+
+// ToCfg get scst.conf from System
 func (s *System) ToCfg() ([]byte, error) {
 	tmpl, err := template.New("scst").Parse(ScstTmpl)
 	if err != nil {
@@ -419,4 +462,15 @@ func (s *System) ToCfg() ([]byte, error) {
 	out := bytes.NewBuffer([]byte(""))
 	err = tmpl.Execute(out, s)
 	return out.Bytes(), err
+}
+
+// readHeader read file first line
+func readHeader(f string) string {
+	fd, err := os.OpenFile(f, os.O_RDONLY, 0755)
+	if err != nil {
+		return ""
+	}
+	rd := bufio.NewReader(fd)
+	line, _ := rd.ReadString('\n')
+	return line
 }
