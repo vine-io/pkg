@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// the package could not work in windows
 package scst
 
 import (
@@ -422,33 +423,112 @@ func FromKernel() (*System, error) {
 		return nil, ErrNoScst
 	}
 
-	var parent, kind string
-	//var handlerPtr, devicePtr, driverPtr, targetPtr, groupPtr string
-	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+	system.Version = readHeader(filepath.Join(root, "version"))
+
+	// the list of handlers
+	subRoot := filepath.Join(root, "handlers")
+	handlers := readDirs(subRoot)
+	system.Handlers = make(map[string]*Handler, len(handlers))
+	for _, handler := range handlers {
+		subRoot = filepath.Join(root, "handlers", handler)
+		devs := readDirs(subRoot)
+		devices := make(map[string]*Device, len(devs))
+		for _, dev := range devs {
+			device := &Device{Name: dev}
+			device.Filename = readHeader(filepath.Join(subRoot, dev, "filename"))
+			size := readHeader(filepath.Join(subRoot, dev, "size"))
+			device.Size, _ = strconv.ParseInt(size, 10, 64)
+
+			devices[dev] = device
+		}
+		system.Handlers[handler] = &Handler{
+			Name:    handler,
+			Devices: devices,
+		}
+	}
+
+	subRoot = filepath.Join(root, "targets")
+	driverDirs := readDirs(subRoot)
+	system.Drivers = make(map[string]*Driver, len(driverDirs))
+	for _, driverDir := range driverDirs {
+		subRoot = filepath.Join(root, "targets", driverDir)
+		tgts := readDirs(subRoot)
+		targets := make(map[string]*Target, len(tgts))
+		for _, tgt := range tgts {
+
+			lunDirs := readDirs(filepath.Join(subRoot, tgt, "luns"))
+			luns := make([]*Lun, 0, len(lunDirs))
+			for _, dir := range lunDirs {
+				lun := &Lun{}
+				lun.Id, _ = strconv.ParseInt(dir, 10, 64)
+
+				device := readLink(filepath.Join(subRoot, tgt, "luns", dir, "device"))
+				if len(device) != 0 {
+					lIndex := strings.LastIndex(device, "/")
+					if lIndex > 0 {
+						lun.Device = device[lIndex+1:]
+					}
+				}
+
+				luns = append(luns, lun)
+			}
+
+			groupDirs := readDirs(filepath.Join(subRoot, tgt, "ini_groups"))
+			groups := make(map[string]*Group, len(groupDirs))
+			for _, g := range groupDirs {
+				lunDirs := readDirs(filepath.Join(subRoot, tgt, "ini_groups", g, "luns"))
+				luns := make([]*Lun, 0, len(lunDirs))
+				for _, dir := range lunDirs {
+					lun := &Lun{}
+					lun.Id, _ = strconv.ParseInt(dir, 10, 64)
+
+					device := readLink(filepath.Join(subRoot, tgt, "ini_groups", g, "luns", dir, "device"))
+					if len(device) != 0 {
+						lIndex := strings.LastIndex(device, "/")
+						if lIndex > 0 {
+							lun.Device = device[lIndex+1:]
+						}
+					}
+
+					luns = append(luns, lun)
+				}
+
+				initiators := readFiles(filepath.Join(subRoot, tgt, "ini_groups", g, "initiators"), "mgmt")
+				groups[g] = &Group{
+					Name:       g,
+					Luns:       luns,
+					Initiators: initiators,
+				}
+			}
+
+			target := &Target{
+				Name:   tgt,
+				Groups: groups,
+				Luns:   luns,
+			}
+
+			tgtId := readHeader(filepath.Join(subRoot, tgt, "rel_tgt_id"))
+			target.Id, _ = strconv.ParseInt(tgtId, 10, 64)
+
+			enabled := readHeader(filepath.Join(subRoot, tgt, "enabled"))
+			enabledInt, _ := strconv.ParseInt(enabled, 10, 64)
+			target.Enabled = int8(enabledInt)
+
+			targets[tgt] = target
 		}
 
-		subPath := strings.TrimPrefix(path, root)
-		if strings.HasPrefix(subPath, ".") {
-			return nil
+		driver := &Driver{
+			Name:    driverDir,
+			Targets: targets,
 		}
 
-		name := info.Name()
-		parts := strings.Split(subPath, "/")
-		switch {
-		case info.IsDir() && len(parts) == 0:
-			parent, kind = _Handler, _Handler
-		case parent == _Handler && name == "version":
-			system.Version = readHeader(path)
-		case parent == _Handler && info.IsDir() && name == "devices":
-			kind = _Device
-		}
-		_ = kind
-		_ = parent
+		enabled := readHeader(filepath.Join(subRoot, "enabled"))
+		enabledInt, _ := strconv.ParseInt(enabled, 10, 64)
+		driver.Enabled = int8(enabledInt)
 
-		return nil
-	})
+		system.Drivers[driverDir] = driver
+	}
+
 	return &system, err
 }
 
@@ -464,13 +544,71 @@ func (s *System) ToCfg() ([]byte, error) {
 	return out.Bytes(), err
 }
 
-// readHeader read file first line
+// readHeader reads file first line
 func readHeader(f string) string {
 	fd, err := os.OpenFile(f, os.O_RDONLY, 0755)
 	if err != nil {
 		return ""
 	}
+	defer fd.Close()
 	rd := bufio.NewReader(fd)
 	line, _ := rd.ReadString('\n')
-	return line
+	return strings.TrimSuffix(line, "\n")
+}
+
+// readDirs reads directories from file path
+func readDirs(f string, ignores ...string) []string {
+	fd, err := os.Open(f)
+	if err != nil {
+		return nil
+	}
+	defer fd.Close()
+	dirs := make([]string, 0)
+	names, _ := fd.Readdirnames(-1)
+	for _, name := range names {
+		info, _ := os.Stat(filepath.Join(f, name))
+		for _, ignore := range ignores {
+			if ignore == name {
+				goto BREAK
+			}
+		}
+		if info != nil && info.IsDir() && !strings.HasPrefix(name, ".") {
+			dirs = append(dirs, name)
+		}
+	BREAK:
+	}
+	return dirs
+}
+
+// readFiles reads file from path
+func readFiles(f string, ignores ...string) []string {
+	fd, err := os.Open(f)
+	if err != nil {
+		return nil
+	}
+	defer fd.Close()
+	files := make([]string, 0)
+	names, _ := fd.Readdirnames(-1)
+	for _, name := range names {
+		info, _ := os.Stat(filepath.Join(f, name))
+		for _, ignore := range ignores {
+			if ignore == name {
+				goto BREAK
+			}
+		}
+		if info != nil && !info.IsDir() && !strings.HasPrefix(name, ".") {
+			files = append(files, name)
+		}
+	BREAK:
+	}
+	return files
+}
+
+// readLink reads file software link
+func readLink(f string) string {
+	name, err := os.Readlink(f)
+	if err != nil {
+		return ""
+	}
+	return name
 }

@@ -34,7 +34,8 @@ TARGET_DRIVER {{ $driver.Name }} { {{- $name := "iscsi" -}} {{ if eq $driver.Nam
     rel_tgt_id {{ $target.Id }} {{ end }}
     {{ range $group := $target.Groups }}
     GROUP {{ $group.Name }} { {{ range $lun := $group.Luns }}
-      LUN {{ $lun.Id }} {{ $lun.Device }}{{ end }}
+      LUN {{ $lun.Id }} {{ $lun.Device }}
+      {{ end }}
       {{- range $initiator := $group.Initiators }} 
       INITIATOR {{ $initiator }} {{ end }}
     }{{ end }} {{- range $lun := $target.Luns }}
