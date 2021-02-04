@@ -28,15 +28,20 @@ import (
 	"text/template"
 )
 
-type System struct {
-	// scst version
-	Version string `json:"version"`
-	// the list of handler
-	Handlers map[string]*Handler `json:"handlers"`
-	// the list of drivers
-	Drivers map[string]*Driver `json:"drivers"`
-}
+const kernel = "/sys/kernel/scst_tgt/"
 
+const (
+	_Version     = "version"
+	_Handler     = "HANDLER"
+	_Device      = "DEVICE"
+	_CopyManager = "copy_manager"
+	_CopyTgt     = "copy_manager_tgt"
+	_Iscsi       = "iscsi"
+	_IscsiTarget = "TARGET"
+	_Group       = "GROUP"
+)
+
+// +gogo:deepcopy-gen=true
 // Handler scst handler
 // Example by scst config /etc/scst.conf:
 // 	HANDLER vdisk_blockio {
@@ -52,6 +57,7 @@ type Handler struct {
 	Devices map[string]*Device `json:"devices"`
 }
 
+// +gogo:deepcopy-gen=true
 // Device scst device
 // Example by scst configure /etc/scst.conf:
 //	  DEVICE admin:ahtr {
@@ -67,6 +73,7 @@ type Device struct {
 	Size int64 `json:"size"`
 }
 
+// +gogo:deepcopy-gen=true
 // Driver scst
 // 	TARGET_DRIVER iscsi {
 //		enabled 1
@@ -91,6 +98,7 @@ type Driver struct {
 	Targets map[string]*Target `json:"targets"`
 }
 
+// +gogo:deepcopy-gen=true
 // Target scst
 // 	TARGET iqn.2018-11.com.example:bsic {
 //		enabled 1
@@ -114,6 +122,7 @@ type Target struct {
 	Luns []*Lun `json:"luns"`
 }
 
+// +gogo:deepcopy-gen=true
 // Group scst resource group
 // 	GROUP admin:bsic {
 //		LUN 0 admin:bsic
@@ -124,11 +133,11 @@ type Group struct {
 	Name string `json:"name"`
 
 	Luns []*Lun `json:"luns"`
-
 	// iscst agent iqn
 	Initiators []string `json:"initiators"`
 }
 
+// +gogo:deepcopy-gen=true
 // Lun scst logical unit
 //
 type Lun struct {
@@ -138,16 +147,26 @@ type Lun struct {
 	Device string `json:"name"`
 }
 
-const (
-	_Version     = "version"
-	_Handler     = "HANDLER"
-	_Device      = "DEVICE"
-	_CopyManager = "copy_manager"
-	_CopyTgt     = "copy_manager_tgt"
-	_Iscsi       = "iscsi"
-	_IscsiTarget = "TARGET"
-	_Group       = "GROUP"
-)
+type System struct {
+	// scst version
+	Version string `json:"version"`
+	// the list of handler
+	Handlers map[string]*Handler `json:"handlers"`
+	// the list of drivers
+	Drivers map[string]*Driver `json:"drivers"`
+}
+
+// ToCfg get scst.conf from System
+func (s *System) ToCfg() ([]byte, error) {
+	tmpl, err := template.New("scst").Parse(ScstTmpl)
+	if err != nil {
+		return nil, err
+	}
+
+	out := bytes.NewBuffer([]byte(""))
+	err = tmpl.Execute(out, s)
+	return out.Bytes(), err
+}
 
 // FromCfg get System by parsing /etc/scst.conf
 func FromCfg() (*System, error) {
@@ -417,7 +436,7 @@ func FromCfgFile(cfg string) (*System, error) {
 func FromKernel() (*System, error) {
 	system := System{}
 
-	root := "/sys/kernel/scst_tgt/"
+	root := kernel
 	_, err := os.Stat(root)
 	if os.IsNotExist(err) {
 		return nil, ErrNoScst
@@ -530,18 +549,6 @@ func FromKernel() (*System, error) {
 	}
 
 	return &system, err
-}
-
-// ToCfg get scst.conf from System
-func (s *System) ToCfg() ([]byte, error) {
-	tmpl, err := template.New("scst").Parse(ScstTmpl)
-	if err != nil {
-		return nil, err
-	}
-
-	out := bytes.NewBuffer([]byte(""))
-	err = tmpl.Execute(out, s)
-	return out.Bytes(), err
 }
 
 // readHeader reads file first line
