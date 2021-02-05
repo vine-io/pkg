@@ -411,6 +411,7 @@ type SnapshotTypes struct {
 	Status string `json:"status" zfs:"lb:status"`
 }
 
+// +gogo:deepcopy-gen=true
 type Pool struct {
 	Name string `json:"name"`
 
@@ -423,6 +424,7 @@ type Pool struct {
 	Clones map[string]*Volume `json:"clones"`
 }
 
+// +gogo:deepcopy-gen=true
 type Volume struct {
 	Name string `json:"name"`
 	// if this field is not empty, volume is a clone.
@@ -436,6 +438,7 @@ type Volume struct {
 	Snapshots map[string]*Snapshot `json:"snapshots"`
 }
 
+// +gogo:deepcopy-gen=true
 type Snapshot struct {
 	Name string `json:"name"`
 	// volume name
