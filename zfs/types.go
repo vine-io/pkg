@@ -14,583 +14,434 @@
 package zfs
 
 const (
-	// Pool, Volume, FileSystem, Snapshot 的 lb:status 属性
-	// ready 表示正在被使用中
+	// Pool, Volume, Snapshot lb:status property
 	Ready = "ready"
-	// recycling 表示等待删除，每隔一段时间会进行一次垃圾回收
-	// lb:status 为 recycling 且不再被其他资源依赖时就会被删除
 	Recycling = "recycling"
 )
 
 const (
-	// lb:display 的属性
-	// show 表示资源可见
-	Show = "show"
-	// hidden 表示资源不可见，一般作为其他资源的辅助使用，不存储数据
-	Hidden = "hidden"
+	STATUS = "lb:status"
 )
+
+type VolumeKind string
 
 const (
-	STATUS       = "lb:status"
-	DISPLAY      = "lb:display"
-	RELATIONSHIP = "lb:relationship"
-	SHADOW       = "lb:shadow"
+	VKVolume     VolumeKind = "volume"
+	VKFileSystem VolumeKind = "filesystem"
 )
 
-type System struct {
-	Pools map[string]*Pool `json:"pools"`
-
-	FileSystems map[string]*Filesystem `json:"fileSystems"`
-
-	Volumes map[string]*Volume `json:"volumes"`
-
-	Snapshots map[string]*Snapshot `json:"snapshot"`
-}
-
-type Pool struct {
+type PoolTypes struct {
 	Name string `json:"name"`
 	// zfs pool 容量
-	Size string `json:"size,omitempty" zfs:"size"`
+	Size string `json:"size" zfs:"size"`
 
-	Capacity string `json:"capacity,omitempty" zfs:"capacity"`
+	Capacity string `json:"capacity" zfs:"capacity"`
 
-	Altroot string `json:"altroot,omitempty" zfs:"altroot"`
+	AltRoot string `json:"altRoot" zfs:"altroot"`
 
-	Health string `json:"health,omitempty" zfs:"health"`
+	Health string `json:"health" zfs:"health"`
 
-	Guid string `json:"guid,omitempty" zfs:"guid"`
+	Guid string `json:"guid" zfs:"guid"`
 
-	Version string `json:"version,omitempty" zfs:"version"`
+	Version string `json:"version" zfs:"version"`
 
-	Bootfs string `json:"bootfs,omitempty" zfs:"bootfs"`
+	BootFs string `json:"bootFs" zfs:"bootfs"`
 
-	Delegation string `json:"delegation,omitempty" zfs:"delegation"`
+	Delegation string `json:"delegation" zfs:"delegation"`
 
-	AutoReplace string `json:"autoReplace,omitempty" zfs:"authreplace"`
+	AutoReplace string `json:"autoReplace" zfs:"authreplace"`
 
-	Cachefile string `json:"cachefile,omitempty" zfs:"cachefile"`
+	CacheFile string `json:"cacheFile" zfs:"cachefile"`
 
-	FailMode string `json:"failMode,omitempty" zfs:"failmode"`
+	FailMode string `json:"failMode" zfs:"failmode"`
 
-	Listsnapshots string `json:"listsnapshots,omitempty" zfs:"listsnapshots"`
+	ListSnapshots string `json:"listSnapshots" zfs:"listsnapshots"`
 
-	AutoExpand string `json:"autoExpand,omitempty" zfs:"autoexpand"`
+	AutoExpand string `json:"autoExpand" zfs:"autoexpand"`
 
-	Dedupditto string `json:"dedupditto,omitempty" zfs:"dedupditto"`
+	DedupDitto string `json:"dedupDitto" zfs:"dedupditto"`
 
-	Dedupratio string `json:"dedupratio,omitempty" zfs:"dedupratio"`
+	DedupRatio string `json:"dedupRatio" zfs:"dedupratio"`
 
 	// zfs pool 可用空间
-	Free string `json:"free,omitempty" zfs:"free"`
+	Free string `json:"free" zfs:"free"`
 
 	// zfs pool 已分配空间
-	Allocated string `json:"allocated,omitempty" zfs:"allocated"`
+	Allocated string `json:"allocated" zfs:"allocated"`
 
-	Readonly string `json:"readonly,omitempty" zfs:"readonly"`
+	Readonly string `json:"readonly" zfs:"readonly"`
 
-	Ashift string `json:"ashift,omitempty" zfs:"ashift"`
+	AShift string `json:"aShift" zfs:"ashift"`
 
-	Comment string `json:"comment,omitempty" zfs:"comment"`
+	Comment string `json:"comment" zfs:"comment"`
 
-	Expandsize string `json:"expandsize,omitempty" zfs:"expandsize"`
+	ExpandSize string `json:"expandSize" zfs:"expandsize"`
 
-	Freeing string `json:"freeing,omitempty" zfs:"freeing"`
+	Freeing string `json:"freeing" zfs:"freeing"`
 
-	Fragmentation string `json:"fragmentation,omitempty" zfs:"fragmentation"`
+	Fragmentation string `json:"fragmentation" zfs:"fragmentation"`
 
-	Leaked string `json:"leaked,omitempty" zfs:"leaked"`
+	Leaked string `json:"leaked" zfs:"leaked"`
 
-	Multihost string `json:"multihost,omitempty" zfs:"multihost"`
+	Multihost string `json:"multihost" zfs:"multihost"`
 
-	FeatureAsyncDestroy string `json:"featureAsyncDestroy,omitempty" zfs:"feature@async_destroy"`
+	FeatureAsyncDestroy string `json:"featureAsyncDestroy" zfs:"feature@async_destroy"`
 
-	FeatureEmptyBpobj string `json:"featureEmptyBpobj,omitempty" zfs:"feature@empty_bpobj"`
+	FeatureEmptyBpobj string `json:"featureEmptyBpobj" zfs:"feature@empty_bpobj"`
 
-	FeatureLz4Compress string `json:"featureLz4Compress,omitempty" zfs:"feature@lz4_compress"`
+	FeatureLz4Compress string `json:"featureLz4Compress" zfs:"feature@lz4_compress"`
 
-	FeatureMultiVdevCrashDump string `json:"featureMultiVdevCrashDump,omitempty" zfs:"feature@multi_vdev_crash_dump"`
+	FeatureMultiVdevCrashDump string `json:"featureMultiVdevCrashDump" zfs:"feature@multi_vdev_crash_dump"`
 
-	FeatureSpacemapHistogram string `json:"featureSpacemapHistogram,omitempty" zfs:"feature@spacemap_histogram"`
+	FeatureSpaceMapHistogram string `json:"featureSpaceMapHistogram" zfs:"feature@spacemap_histogram"`
 
-	FeatureEnabledTxg string `json:"featureEnabledTxg,omitempty" zfs:"feature@enabled_txg"`
+	FeatureEnabledTxg string `json:"featureEnabledTxg" zfs:"feature@enabled_txg"`
 
-	FeatureHoleBirth string `json:"featureHoleBirth,omitempty" zfs:"feature@hole_birth"`
+	FeatureHoleBirth string `json:"featureHoleBirth" zfs:"feature@hole_birth"`
 
-	FeatureExtensibleDataset string `json:"featureExtensibleDataset,omitempty" zfs:"feature@extensible_dataset"`
+	FeatureExtensibleDataset string `json:"featureExtensibleDataset" zfs:"feature@extensible_dataset"`
 
-	FeatureEmbeddedData string `json:"featureEmbeddedData,omitempty" zfs:"feature@embedded_data"`
+	FeatureEmbeddedData string `json:"featureEmbeddedData" zfs:"feature@embedded_data"`
 
-	FeatureBookmarks string `json:"featureBookmarks,omitempty" zfs:"feature@bookmarks"`
+	FeatureBookmarks string `json:"featureBookmarks" zfs:"feature@bookmarks"`
 
-	FeatureFilesystemLimits string `json:"featureFilesystemLimits,omitempty" zfs:"feature@filesystem_limits"`
+	FeatureFilesystemLimits string `json:"featureFilesystemLimits" zfs:"feature@filesystem_limits"`
 
-	FeatureLargeBlocks string `json:"featureLargeBlocks,omitempty" zfs:"feature@large_blocks"`
+	FeatureLargeBlocks string `json:"featureLargeBlocks" zfs:"feature@large_blocks"`
 
-	FeatureLargeDnode string `json:"featureLargeDnode,omitempty" zfs:"feature@large_dnode"`
+	FeatureLargeDnode string `json:"featureLargeDnode" zfs:"feature@large_dnode"`
 
-	FeatureSha512 string `json:"featureSha512,omitempty" zfs:"feature@sha512"`
+	FeatureSha512 string `json:"featureSha512" zfs:"feature@sha512"`
 
-	FeatureSkein string `json:"featureSkein,omitempty" zfs:"feature@skein"`
+	FeatureSkein string `json:"featureSkein" zfs:"feature@skein"`
 
-	FeatureEdonr string `json:"featureEdonr,omitempty" zfs:"feature@edonr "`
+	FeatureEdonr string `json:"featureEdonr" zfs:"feature@edonr "`
 
-	FeatureUserobjAccounting string `json:"featureUserobjAccounting,omitempty" zfs:"feature@userobj_accounting"`
+	FeatureUserobjAccounting string `json:"featureUserobjAccounting" zfs:"feature@userobj_accounting"`
 
 	// tank filesystem
-	Type string `json:"type,omitempty" zfs:"type"`
+	Type string `json:"type" zfs:"type"`
 
-	Creation string `json:"creation,omitempty" zfs:"creation"`
+	Creation string `json:"creation" zfs:"creation"`
 
-	Used string `json:"used,omitempty" zfs:"used"`
+	Used string `json:"used" zfs:"used"`
 
-	Available string `json:"available,omitempty" zfs:"available"`
+	Available string `json:"available" zfs:"available"`
 
-	Referenced string `json:"referenced,omitempty" zfs:"referenced"`
+	Referenced string `json:"referenced" zfs:"referenced"`
 
-	Compressratio string `json:"compressratio,omitempty" zfs:"compressratio"`
+	CompressRatio string `json:"compressRatio" zfs:"compressratio"`
 
-	Mounted string `json:"mounted,omitempty" zfs:"mounted"`
+	Mounted string `json:"mounted" zfs:"mounted"`
 
-	Quota string `json:"quota,omitempty" zfs:"quota"`
+	Quota string `json:"quota" zfs:"quota"`
 
-	Reservation string `json:"reservation,omitempty" zfs:"reservation"`
+	Reservation string `json:"reservation" zfs:"reservation"`
 
-	Recordsize string `json:"recordsize,omitempty" zfs:"recordsize"`
+	RecordSize string `json:"recordSize" zfs:"recordsize"`
 
-	Mountpoint string `json:"mountpoint,omitempty" zfs:"mountpoint"`
+	MountPoint string `json:"mountPoint" zfs:"mountpoint"`
 
-	Sharenfs string `json:"sharenfs,omitempty" zfs:"sharenfs"`
+	SharenFs string `json:"sharenFs" zfs:"sharenfs"`
 
-	Checksum string `json:"checksum,omitempty" zfs:"checksum"`
+	Checksum string `json:"checksum" zfs:"checksum"`
 
-	Compression string `json:"compression,omitempty" zfs:"compression"`
+	Compression string `json:"compression" zfs:"compression"`
 
-	Atime string `json:"atime,omitempty" zfs:"atime"`
+	ATime string `json:"aTime" zfs:"atime"`
 
-	Devices string `json:"devices,omitempty" zfs:"devices"`
+	Devices string `json:"devices" zfs:"devices"`
 
-	Exec string `json:"exec,omitempty" zfs:"exec"`
+	Exec string `json:"exec" zfs:"exec"`
 
-	Setuid string `json:"setuid,omitempty" zfs:"setuid"`
+	SetUid string `json:"setUid" zfs:"setuid"`
 
-	Zoned string `json:"zoned,omitempty" zfs:"zoned"`
+	Zoned string `json:"zoned" zfs:"zoned"`
 
-	Snapdir string `json:"snapdir,omitempty" zfs:"snapdir"`
+	SnapDir string `json:"snapDir" zfs:"snapdir"`
 
-	Aclinherit string `json:"aclinherit,omitempty" zfs:"aclinherit"`
+	AclinHerit string `json:"aclinHerit" zfs:"aclinherit"`
 
-	Createtxg string `json:"createtxg,omitempty" zfs:"createtxg"`
+	Createtxg string `json:"createtxg" zfs:"createtxg"`
 
-	Canmount string `json:"canmount,omitempty" zfs:"canmount"`
+	CanMount string `json:"canMount" zfs:"canmount"`
 
-	Xattr string `json:"xattr,omitempty" zfs:"xattr"`
+	Xattr string `json:"xattr" zfs:"xattr"`
 
-	Copies string `json:"copies,omitempty" zfs:"copies"`
+	Copies string `json:"copies" zfs:"copies"`
 
-	Utf8only string `json:"utf8Only,omitempty" zfs:"utf8only"`
+	Utf8only string `json:"utf8Only" zfs:"utf8only"`
 
-	Normalization string `json:"normalization,omitempty" zfs:"normalization"`
+	Normalization string `json:"normalization" zfs:"normalization"`
 
-	Casesensitivity string `json:"casesensitivity,omitempty" zfs:"casesensitivity"`
+	Casesensitivity string `json:"casesensitivity" zfs:"casesensitivity"`
 
-	Vscan string `json:"vscan,omitempty" zfs:"vscan"`
+	Vscan string `json:"vscan" zfs:"vscan"`
 
-	Nbmand string `json:"nbmand,omitempty" zfs:"nbmand"`
+	Nbmand string `json:"nbmand" zfs:"nbmand"`
 
-	Sharesmb string `json:"sharesmb,omitempty" zfs:"sharesmb"`
+	Sharesmb string `json:"sharesmb" zfs:"sharesmb"`
 
-	Refquota string `json:"refquota,omitempty" zfs:"refquota"`
+	Refquota string `json:"refquota" zfs:"refquota"`
 
-	Refreservation string `json:"refreservation,omitempty" zfs:"refreservation"`
+	Refreservation string `json:"refreservation" zfs:"refreservation"`
 
-	Primarycache string `json:"primarycache,omitempty" zfs:"primarycache"`
+	Primarycache string `json:"primarycache" zfs:"primarycache"`
 
-	Secondarycache string `json:"secondarycache,omitempty" zfs:"secondarycache"`
+	Secondarycache string `json:"secondarycache" zfs:"secondarycache"`
 
-	Usedbysnapshots string `json:"usedbysnapshots,omitempty" zfs:"usedbysnapshots"`
+	Usedbysnapshots string `json:"usedbysnapshots" zfs:"usedbysnapshots"`
 
-	Usedbydataset string `json:"usedbydataset,omitempty" zfs:"usedbydataset"`
+	Usedbydataset string `json:"usedbydataset" zfs:"usedbydataset"`
 
-	Usedbychildren string `json:"usedbychildren,omitempty" zfs:"usedbychildren"`
+	Usedbychildren string `json:"usedbychildren" zfs:"usedbychildren"`
 
-	Usedbyrefreservation string `json:"usedbyrefreservation,omitempty" zfs:"usedbyrefreservation"`
+	Usedbyrefreservation string `json:"usedbyrefreservation" zfs:"usedbyrefreservation"`
 
-	Logbias string `json:"logbias,omitempty" zfs:"logbias"`
+	Logbias string `json:"logbias" zfs:"logbias"`
 
-	Dedup string `json:"dedup,omitempty" zfs:"dedup"`
+	Dedup string `json:"dedup" zfs:"dedup"`
 
-	Mlslabel string `json:"mlslabel,omitempty" zfs:"mlslabel"`
+	Mlslabel string `json:"mlslabel" zfs:"mlslabel"`
 
-	Sync string `json:"sync,omitempty" zfs:"sync"`
+	Sync string `json:"sync" zfs:"sync"`
 
-	Dnodesize string `json:"dnodesize,omitempty" zfs:"dnodesize"`
+	Dnodesize string `json:"dnodesize" zfs:"dnodesize"`
 
-	Refcompressratio string `json:"refcompressratio,omitempty" zfs:"refcompressratio"`
+	Refcompressratio string `json:"refcompressratio" zfs:"refcompressratio"`
 
-	Written string `json:"written,omitempty" zfs:"written"`
+	Written string `json:"written" zfs:"written"`
 
-	Logicalused string `json:"logicalused,omitempty" zfs:"logicalused"`
+	Logicalused string `json:"logicalused" zfs:"logicalused"`
 
-	Logicalreferenced string `json:"logicalreferenced,omitempty" zfs:"logicalreferenced"`
+	Logicalreferenced string `json:"logicalreferenced" zfs:"logicalreferenced"`
 
-	Volmode string `json:"volmode,omitempty" zfs:"volmode"`
+	Volmode string `json:"volmode" zfs:"volmode"`
 
-	FilesystemLimit string `json:"filesystemLimit,omitempty" zfs:"filesystem_limit"`
+	FilesystemLimit string `json:"filesystemLimit" zfs:"filesystem_limit"`
 
-	SnapshotLimit string `json:"snapshotLimit,omitempty" zfs:"snapshot_limit"`
+	SnapshotLimit string `json:"snapshotLimit" zfs:"snapshot_limit"`
 
-	FilesystemCount string `json:"filesystemCount,omitempty" zfs:"filesystem_count"`
+	FilesystemCount string `json:"filesystemCount" zfs:"filesystem_count"`
 
-	SnapshotCount string `json:"snapshotCount,omitempty" zfs:"snapshot_count"`
+	SnapshotCount string `json:"snapshotCount" zfs:"snapshot_count"`
 
-	Snapdev string `json:"snapdev,omitempty" zfs:"snapdev"`
+	Snapdev string `json:"snapdev" zfs:"snapdev"`
 
-	Acltype string `json:"acltype,omitempty" zfs:"acltype"`
+	Acltype string `json:"acltype" zfs:"acltype"`
 
-	Context string `json:"context,omitempty" zfs:"context"`
+	Context string `json:"context" zfs:"context"`
 
-	Fscontext string `json:"fscontext,omitempty" zfs:"fscontext"`
+	Fscontext string `json:"fscontext" zfs:"fscontext"`
 
-	Defcontext string `json:"defcontext,omitempty" zfs:"defcontext"`
+	Defcontext string `json:"defcontext" zfs:"defcontext"`
 
-	Rootcontext string `json:"rootcontext,omitempty" zfs:"rootcontext"`
+	Rootcontext string `json:"rootcontext" zfs:"rootcontext"`
 
-	Relatime string `json:"relatime,omitempty" zfs:"relatime"`
+	Relatime string `json:"relatime" zfs:"relatime"`
 
-	RedundantMetadata string `json:"redundantMetadata,omitempty" zfs:"redundant_metadata"`
+	RedundantMetadata string `json:"redundantMetadata" zfs:"redundant_metadata"`
 
-	Overlay string `json:"overlay,omitempty" zfs:"overlay"`
+	Overlay string `json:"overlay" zfs:"overlay"`
 
-	Encryption string `json:"encryption,omitempty" zfs:"encryption"`
+	Encryption string `json:"encryption" zfs:"encryption"`
 
-	Keylocation string `json:"keylocation,omitempty" zfs:"keylocation"`
+	Keylocation string `json:"keylocation" zfs:"keylocation"`
 
-	Keyformat string `json:"keyformat,omitempty" zfs:"keyformat"`
+	Keyformat string `json:"keyformat" zfs:"keyformat"`
 
-	Pbkdf2iters string `json:"pbkdf2Iters,omitempty" zfs:"pbkdf2iters"`
+	Pbkdf2iters string `json:"pbkdf2Iters" zfs:"pbkdf2iters"`
 
-	SpecialSmallBlocks string `json:"specialSmallBlocks,omitempty" zfs:"special_small_blocks"`
+	SpecialSmallBlocks string `json:"specialSmallBlocks" zfs:"special_small_blocks"`
 	// 自定义属性，用于垃圾回收
-	Status string `json:"status,omitempty" zfs:"lb:status"`
-	// Pool 下的 Volume, FileSystem, Snapshot, Clone
-	Devs map[string]string `json:"devs,omitempty"`
+	Status string `json:"status" zfs:"lb:status"`
 }
 
-type Filesystem struct {
-	Pool string `json:"pool"`
-
+type VolumeTypes struct {
 	Name string `json:"name"`
-	// 克隆该 Volume 的 Snapshot 名称
-	Source string `json:"source,omitempty"`
 
-	Type string `json:"type,omitempty" zfs:"type"`
+	Type string `json:"type" zfs:"type"`
 
-	Creation string `json:"creation,omitempty" zfs:"creation"`
+	Creation string `json:"creation" zfs:"creation"`
 
-	Used string `json:"used,omitempty" zfs:"used"`
+	Used string `json:"used" zfs:"used"`
 
-	Available string `json:"available,omitempty" zfs:"available"`
+	Available string `json:"available" zfs:"available"`
 
-	Referenced string `json:"referenced,omitempty" zfs:"referenced"`
+	Referenced string `json:"referenced" zfs:"referenced"`
 
-	Compressratio string `json:"compressratio,omitempty" zfs:"compressratio"`
+	Compressratio string `json:"compressratio" zfs:"compressratio"`
 
-	Mounted string `json:"mounted,omitempty" zfs:"mounted"`
+	Reservation string `json:"reservation" zfs:"reservation"`
 
-	Quota string `json:"quota,omitempty" zfs:"quota"`
+	Volsize string `json:"volsize" zfs:"volsize"`
 
-	Reservation string `json:"reservation,omitempty" zfs:"reservation"`
+	Volblocksize string `json:"volblocksize" zfs:"volblocksize"`
 
-	Recordsize string `json:"recordsize,omitempty" zfs:"recordsize"`
+	Checksum string `json:"checksum" zfs:"checksum"`
 
-	Mountpoint string `json:"mountpoint,omitempty" zfs:"mountpoint"`
+	Compression string `json:"compression" zfs:"compression"`
 
-	Sharenfs string `json:"sharenfs,omitempty" zfs:"sharenfs"`
+	Readonly string `json:"readonly" zfs:"readonly"`
 
-	Checksum string `json:"checksum,omitempty" zfs:"checksum"`
+	Copies string `json:"copies" zfs:"copies"`
 
-	Compression string `json:"compression,omitempty" zfs:"compression"`
+	Refreservation string `json:"refreservation" zfs:"refreservation"`
 
-	Atime string `json:"atime,omitempty" zfs:"atime"`
+	Guid string `json:"guid" zfs:"guid"`
 
-	Devices string `json:"devices,omitempty" zfs:"devices"`
+	Primarycache string `json:"primarycache" zfs:"primarycache"`
 
-	Exec string `json:"exec,omitempty" zfs:"exec"`
+	Secondarycache string `json:"secondarycache" zfs:"secondarycache"`
 
-	Setuid string `json:"setuid,omitempty" zfs:"setuid"`
+	Usedbysnapshots string `json:"usedbysnapshots" zfs:"usedbysnapshots"`
 
-	Readonly string `json:"readonly,omitempty" zfs:"readonly"`
+	Usedbydataset string `json:"usedbydataset" zfs:"usedbydataset"`
 
-	Zoned string `json:"zoned,omitempty" zfs:"zoned"`
+	Usedbychildren string `json:"usedbychildren" zfs:"usedbychildren"`
 
-	Snapdir string `json:"snapdir,omitempty" zfs:"snapdir"`
+	Usedbyrefreservation string `json:"usedbyrefreservation" zfs:"usedbyrefreservation"`
 
-	Aclinherit string `json:"aclinherit,omitempty" zfs:"aclinherit"`
+	Logbias string `json:"logbias" zfs:"logbias"`
 
-	Createtxg string `json:"createtxg,omitempty" zfs:"createtxg"`
+	Dedup string `json:"dedup" zfs:"dedup"`
 
-	Canmount string `json:"canmount,omitempty" zfs:"canmount"`
+	Mlslabel string `json:"mlslabel" zfs:"mlslabel"`
 
-	Xattr string `json:"xattr,omitempty" zfs:"xattr"`
+	Sync string `json:"sync" zfs:"sync"`
 
-	Copies string `json:"copies,omitempty" zfs:"copies"`
+	Refcompressratio string `json:"refcompressratio" zfs:"refcompressratio"`
 
-	Version string `json:"version,omitempty" zfs:"version"`
+	Written string `json:"written" zfs:"written"`
 
-	Utf8only string `json:"utf8Only,omitempty" zfs:"utf8only"`
+	Logicalused string `json:"logicalused" zfs:"logicalused"`
 
-	Normalization string `json:"normalization,omitempty" zfs:"normalization"`
+	Logicalreferenced string `json:"logicalreferenced" zfs:"logicalreferenced"`
 
-	Casesensitivity string `json:"casesensitivity,omitempty" zfs:"casesensitivity"`
+	Volmode string `json:"volmode" zfs:"volmode"`
 
-	Vscan string `json:"vscan,omitempty" zfs:"vscan"`
+	FilesystemLimit string `json:"filesystemLimit" zfs:"filesystem_limit"`
 
-	Nbmand string `json:"nbmand,omitempty" zfs:"nbmand"`
+	SnapshotLimit string `json:"snapshotLimit" zfs:"snapshot_limit"`
 
-	Sharesmb string `json:"sharesmb,omitempty" zfs:"sharesmb"`
+	SnapshotCount string `json:"snapshotCount" zfs:"snapshot_count"`
 
-	Refquota string `json:"refquota,omitempty" zfs:"refquota"`
+	Snapdev string `json:"snapdev" zfs:"snapdev"`
 
-	Refreservation string `json:"refreservation,omitempty" zfs:"refreservation"`
+	Acltype string `json:"acltype" zfs:"acltype"`
 
-	Guid string `json:"guid,omitempty" zfs:"guid"`
+	Context string `json:"context" zfs:"context"`
 
-	Primarycache string `json:"primarycache,omitempty" zfs:"primarycache"`
+	Fscontext string `json:"fscontext" zfs:"fscontext"`
 
-	Secondarycache string `json:"secondarycache,omitempty" zfs:"secondarycache"`
+	Defcontext string `json:"defcontext" zfs:"defcontext"`
 
-	Usedbysnapshots string `json:"usedbysnapshots,omitempty" zfs:"usedbysnapshots"`
+	Rootcontext string `json:"rootcontext" zfs:"rootcontext"`
 
-	Usedbydataset string `json:"usedbydataset,omitempty" zfs:"usedbydataset"`
-
-	Usedbychildren string `json:"usedbychildren,omitempty" zfs:"usedbychildren"`
-
-	Usedbyrefreservation string `json:"usedbyrefreservation,omitempty" zfs:"usedbyrefreservation"`
-
-	Logbias string `json:"logbias,omitempty" zfs:"logbias"`
-
-	Dedup string `json:"dedup,omitempty" zfs:"dedup"`
-
-	Mlslabel string `json:"mlslabel,omitempty" zfs:"mlslabel"`
-
-	Sync string `json:"sync,omitempty" zfs:"sync"`
-
-	Dnodesize string `json:"dnodesize,omitempty" zfs:"dnodesize"`
-
-	Refcompressratio string `json:"refcompressratio,omitempty" zfs:"refcompressratio"`
-
-	Written string `json:"written,omitempty" zfs:"written"`
-
-	Logicalused string `json:"logicalused,omitempty" zfs:"logicalused"`
-
-	Logicalreferenced string `json:"logicalreferenced,omitempty" zfs:"logicalreferenced"`
-
-	Volmode string `json:"volmode,omitempty" zfs:"volmode"`
-
-	FilesystemLimit string `json:"filesystemLimit,omitempty" zfs:"filesystem_limit"`
-
-	SnapshotLimit string `json:"snapshotLimit,omitempty" zfs:"snapshot_limit"`
-
-	FilesystemCount string `json:"filesystemCount,omitempty" zfs:"filesystem_count"`
-
-	SnapshotCount string `json:"snapshotCount,omitempty" zfs:"snapshot_count"`
-
-	Snapdev string `json:"snapdev,omitempty" zfs:"snapdev"`
-
-	Acltype string `json:"acltype,omitempty" zfs:"acltype"`
-
-	Context string `json:"context,omitempty" zfs:"context"`
-
-	Fscontext string `json:"fscontext,omitempty" zfs:"fscontext"`
-
-	Defcontext string `json:"defcontext,omitempty" zfs:"defcontext"`
-
-	Rootcontext string `json:"rootcontext,omitempty" zfs:"rootcontext"`
-
-	Relatime string `json:"relatime,omitempty" zfs:"relatime"`
-
-	RedundantMetadata string `json:"redundantMetadata,omitempty" zfs:"redundant_metadata"`
-
-	Overlay string `json:"overlay,omitempty" zfs:"overlay"`
-	// 自定义属性,是否可见
-	Display string `json:"display,omitempty" zfs:"lb:display"`
-	// Shadow, FileSystem 在创建时会默认生成一份快照
-	// 防止快照发送时由于只剩下一份快照而无法进行增量发送
-	Shadow string `json:"shadow,omitempty" zfs:"lb:shadow"`
+	RedundantMetadata string `json:"redundantMetadata" zfs:"redundant_metadata"`
 	// 自定义属性
-	Status string `json:"status,omitempty" zfs:"lb:status"`
-	// FileSystem 下的 Snapshot
-	Snapshots map[string]string `json:"snapshots,omitempty"`
+	Status string `json:"status" zfs:"lb:status"`
 }
 
-type Volume struct {
-	Pool string `json:"pool"`
-
-	Name string `json:"name"`
-	// 克隆该 Volume 的 Snapshot 名称
-	Source string `json:"source,omitempty"`
-
-	Type string `json:"type,omitempty" zfs:"type"`
-
-	Creation string `json:"creation,omitempty" zfs:"creation"`
-
-	Used string `json:"used,omitempty" zfs:"used"`
-
-	Available string `json:"available,omitempty" zfs:"available"`
-
-	Referenced string `json:"referenced,omitempty" zfs:"referenced"`
-
-	Compressratio string `json:"compressratio,omitempty" zfs:"compressratio"`
-
-	Reservation string `json:"reservation,omitempty" zfs:"reservation"`
-
-	Volsize string `json:"volsize,omitempty" zfs:"volsize"`
-
-	Volblocksize string `json:"volblocksize,omitempty" zfs:"volblocksize"`
-
-	Checksum string `json:"checksum,omitempty" zfs:"checksum"`
-
-	Compression string `json:"compression,omitempty" zfs:"compression"`
-
-	Readonly string `json:"readonly,omitempty" zfs:"readonly"`
-
-	Copies string `json:"copies,omitempty" zfs:"copies"`
-
-	Refreservation string `json:"refreservation,omitempty" zfs:"refreservation"`
-
-	Guid string `json:"guid,omitempty" zfs:"guid"`
-
-	Primarycache string `json:"primarycache,omitempty" zfs:"primarycache"`
-
-	Secondarycache string `json:"secondarycache,omitempty" zfs:"secondarycache"`
-
-	Usedbysnapshots string `json:"usedbysnapshots,omitempty" zfs:"usedbysnapshots"`
-
-	Usedbydataset string `json:"usedbydataset,omitempty" zfs:"usedbydataset"`
-
-	Usedbychildren string `json:"usedbychildren,omitempty" zfs:"usedbychildren"`
-
-	Usedbyrefreservation string `json:"usedbyrefreservation,omitempty" zfs:"usedbyrefreservation"`
-
-	Logbias string `json:"logbias,omitempty" zfs:"logbias"`
-
-	Dedup string `json:"dedup,omitempty" zfs:"dedup"`
-
-	Mlslabel string `json:"mlslabel,omitempty" zfs:"mlslabel"`
-
-	Sync string `json:"sync,omitempty" zfs:"sync"`
-
-	Refcompressratio string `json:"refcompressratio,omitempty" zfs:"refcompressratio"`
-
-	Written string `json:"written,omitempty" zfs:"written"`
-
-	Logicalused string `json:"logicalused,omitempty" zfs:"logicalused"`
-
-	Logicalreferenced string `json:"logicalreferenced,omitempty" zfs:"logicalreferenced"`
-
-	Volmode string `json:"volmode,omitempty" zfs:"volmode"`
-
-	FilesystemLimit string `json:"filesystemLimit,omitempty" zfs:"filesystem_limit"`
-
-	SnapshotLimit string `json:"snapshotLimit,omitempty" zfs:"snapshot_limit"`
-
-	SnapshotCount string `json:"snapshotCount,omitempty" zfs:"snapshot_count"`
-
-	Snapdev string `json:"snapdev,omitempty" zfs:"snapdev"`
-
-	Acltype string `json:"acltype,omitempty" zfs:"acltype"`
-
-	Context string `json:"context,omitempty" zfs:"context"`
-
-	Fscontext string `json:"fscontext,omitempty" zfs:"fscontext"`
-
-	Defcontext string `json:"defcontext,omitempty" zfs:"defcontext"`
-
-	Rootcontext string `json:"rootcontext,omitempty" zfs:"rootcontext"`
-
-	RedundantMetadata string `json:"redundantMetadata,omitempty" zfs:"redundant_metadata"`
-	// 自定义属性,是否可见
-	Display string `json:"display,omitempty" zfs:"lb:display"`
-	// Shadow, Volume 在创建时会默认生成一份快照
-	// 防止快照发送时由于只剩下一份快照而无法进行增量发送
-	Shadow string `json:"shadow,omitempty" zfs:"lb:shadow"`
-	// 自定义属性
-	Status string `json:"status,omitempty" zfs:"lb:status"`
-	// FileSystem 下的 Snapshot
-	Snapshots map[string]string `json:"snapshots,omitempty"`
-}
-
-type Snapshot struct {
+type SnapshotTypes struct {
 	Pool string `json:"pool"`
 
 	Parent string `json:"parent"`
 
 	Name string `json:"name"`
 
-	Type string `json:"type,omitempty" zfs:"type"`
+	Type string `json:"type" zfs:"type"`
 
-	Creation string `json:"creation,omitempty" zfs:"creation"`
+	Creation string `json:"creation" zfs:"creation"`
 
-	Used string `json:"used,omitempty" zfs:"used"`
+	Used string `json:"used" zfs:"used"`
 
-	Referenced string `json:"referenced,omitempty" zfs:"referenced"`
+	Referenced string `json:"referenced" zfs:"referenced"`
 
-	Compressratio string `json:"compressratio,omitempty" zfs:"compressratio"`
+	Compressratio string `json:"compressratio" zfs:"compressratio"`
 
-	Devices string `json:"devices,omitempty" zfs:"devices"`
+	Devices string `json:"devices" zfs:"devices"`
 
-	Exec string `json:"exec,omitempty" zfs:"exec"`
+	Exec string `json:"exec" zfs:"exec"`
 
-	Setuid string `json:"setuid,omitempty" zfs:"setuid"`
+	Setuid string `json:"setuid" zfs:"setuid"`
 
-	Createtxg string `json:"createtxg,omitempty" zfs:"createtxg"`
+	Createtxg string `json:"createtxg" zfs:"createtxg"`
 
-	Version string `json:"version,omitempty" zfs:"version"`
+	Version string `json:"version" zfs:"version"`
 
-	Utf8only string `json:"utf8Only,omitempty" zfs:"utf8only"`
+	Utf8only string `json:"utf8Only" zfs:"utf8only"`
 
-	Normalization string `json:"normalization,omitempty" zfs:"normalization"`
+	Normalization string `json:"normalization" zfs:"normalization"`
 
-	Casesensitivity string `json:"casesensitivity,omitempty" zfs:"casesensitivity"`
+	Casesensitivity string `json:"casesensitivity" zfs:"casesensitivity"`
 
-	Vscan string `json:"vscan,omitempty" zfs:"vscan"`
+	Vscan string `json:"vscan" zfs:"vscan"`
 
-	Nbmand string `json:"nbmand,omitempty" zfs:"nbmand"`
+	Nbmand string `json:"nbmand" zfs:"nbmand"`
 
-	Guid string `json:"guid,omitempty" zfs:"guid"`
+	Guid string `json:"guid" zfs:"guid"`
 
-	Primarycache string `json:"primarycache,omitempty" zfs:"primarycache"`
+	Primarycache string `json:"primarycache" zfs:"primarycache"`
 
-	Secondarycache string `json:"secondarycache,omitempty" zfs:"secondarycache"`
+	Secondarycache string `json:"secondarycache" zfs:"secondarycache"`
 
-	DeferDestroy string `json:"deferDestroy,omitempty" zfs:"defer_destroy"`
+	DeferDestroy string `json:"deferDestroy" zfs:"defer_destroy"`
 
-	Userrefs string `json:"userrefs,omitempty" zfs:"userrefs"`
+	Userrefs string `json:"userrefs" zfs:"userrefs"`
 
-	Mlslabel string `json:"mlslabel,omitempty" zfs:"mlslabel"`
+	Mlslabel string `json:"mlslabel" zfs:"mlslabel"`
 
-	Refcompressratio string `json:"refcompressratio,omitempty" zfs:"refcompressratio"`
+	Refcompressratio string `json:"refcompressratio" zfs:"refcompressratio"`
 
-	Written string `json:"written,omitempty" zfs:"written"`
+	Written string `json:"written" zfs:"written"`
 
-	Logicalreferenced string `json:"logicalreferenced,omitempty" zfs:"logicalreferenced"`
+	Logicalreferenced string `json:"logicalreferenced" zfs:"logicalreferenced"`
 
-	Acltype string `json:"acltype,omitempty" zfs:"acltype"`
+	Acltype string `json:"acltype" zfs:"acltype"`
 
-	Context string `json:"context,omitempty" zfs:"context"`
+	Context string `json:"context" zfs:"context"`
 
-	Fscontext string `json:"fscontext,omitempty" zfs:"fscontext"`
+	Fscontext string `json:"fscontext" zfs:"fscontext"`
 
-	Defcontext string `json:"defcontext,omitempty" zfs:"defcontext"`
+	Defcontext string `json:"defcontext" zfs:"defcontext"`
 
-	Rootcontext string `json:"rootcontext,omitempty" zfs:"rootcontext"`
-	// 自定义属性,是否可见
-	Display string `json:"display,omitempty" zfs:"lb:display"`
-	// Snapshot 下的 Clone
-	Clones map[string]string `json:"clones,omitempty" zfs:"clones"`
+	Rootcontext string `json:"rootcontext" zfs:"rootcontext"`
 	// 自定义属性
-	Status string `json:"status,omitempty" zfs:"lb:status"`
-	// 自定义属性, snapshot send 后关联的 filesystem 或是 volume
-	// 存在这个属性时，删除 snapshot 时同时删除 filesystem 或是 volume
-	RelationShip string `json:"relationShip,omitempty" zfs:"lb:relationship"`
+	Status string `json:"status" zfs:"lb:status"`
+}
+
+type Pool struct {
+	Name string `json:"name"`
+
+	Types PoolTypes `json:"types"`
+
+	Volumes map[string]*Volume `json:"volumes"`
+
+	Snapshots map[string]*Snapshot `json:"snapshots"`
+
+	Clones map[string]*Volume `json:"clones"`
+}
+
+type Volume struct {
+	Name string `json:"name"`
+	// if this field is not empty, volume is a clone.
+	// this field empty snapshot's name.
+	Parent string `json:"parent"`
+
+	Kind VolumeKind `json:"kind"`
+
+	Types VolumeTypes `json:"types"`
+
+	Snapshots map[string]*Snapshot `json:"snapshots"`
+}
+
+type Snapshot struct {
+	Name string `json:"name"`
+	// volume name
+	Source string `json:"source"`
+
+	Types SnapshotTypes `json:"types"`
+
+	Clones map[string]*Volume `json:"clones"`
 }
