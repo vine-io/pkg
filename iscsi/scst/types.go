@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// the package could not work in windows
+// Package scst could not work in windows
 package scst
 
 import (
@@ -41,7 +41,6 @@ const (
 	_Group       = "GROUP"
 )
 
-// +gogo:deepcopy-gen=true
 // Handler scst handler
 // Example by scst config /etc/scst.conf:
 // 	HANDLER vdisk_blockio {
@@ -50,30 +49,32 @@ const (
 //			size 10737418240
 //		}
 // 	}
+// +gogo:deepcopy-gen=true
+// +gogo:genproto=true
 type Handler struct {
 	// the name of handler, example vdisk_blockio
-	Name string `json:"name"`
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	//
-	Devices map[string]*Device `json:"devices"`
+	Devices map[string]*Device `json:"devices" protobuf:"bytes,2,rep,name=devices"`
 }
 
-// +gogo:deepcopy-gen=true
 // Device scst device
 // Example by scst configure /etc/scst.conf:
 //	  DEVICE admin:ahtr {
 //			filename /dev/sdc
 //			size 10737418240
 //	  }
+// +gogo:deepcopy-gen=true
+// +gogo:genproto=true
 type Device struct {
 	// the name of device
-	Name string `json:"name"`
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	// the filename of device, the path of block file
-	Filename string `json:"filename"`
+	Filename string `json:"filename" protobuf:"bytes,2,opt,name=filename"`
 	// the size of device (unit B)
-	Size int64 `json:"size"`
+	Size_ int64 `json:"size" protobuf:"varint,3,opt,name=size"`
 }
 
-// +gogo:deepcopy-gen=true
 // Driver scst
 // 	TARGET_DRIVER iscsi {
 //		enabled 1
@@ -89,16 +90,17 @@ type Device struct {
 //			}
 //		}
 //	}
+// +gogo:deepcopy-gen=true
+// +gogo:genproto=true
 type Driver struct {
 	// the name of Driver
-	Name string `json:"name"`
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	//
-	Enabled int8 `json:"enabled"`
+	Enabled int32 `json:"enabled" protobuf:"varint,2,opt,name=enabled"`
 	// Targets
-	Targets map[string]*Target `json:"targets"`
+	Targets map[string]*Target `json:"targets" protobuf:"bytes,3,rep,name=targets"`
 }
 
-// +gogo:deepcopy-gen=true
 // Target scst
 // 	TARGET iqn.2018-11.com.example:bsic {
 //		enabled 1
@@ -110,41 +112,44 @@ type Driver struct {
 //			INITIATOR iqn.1991-05.com.microsoft:win-1bp99fqu2ri
 //		}
 //	}
+// +gogo:deepcopy-gen=true
+// +gogo:genproto=true
 type Target struct {
-	Name string `json:"name"`
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 
-	Enabled int8 `json:"enabled"`
+	Enabled int32 `json:"enabled" protobuf:"varint,2,opt,name=enabled"`
 
-	Id int64 `json:"id"`
+	Id int64 `json:"id" protobuf:"varint,3,opt,name=id"`
 
-	Groups map[string]*Group `json:"groups"`
+	Groups map[string]*Group `json:"groups" protobuf:"bytes,4,rep,name=groups"`
 
-	Luns []*Lun `json:"luns"`
+	Luns []*Lun `json:"luns" protobuf:"bytes,5,rep,name=luns"`
 }
 
-// +gogo:deepcopy-gen=true
 // Group scst resource group
 // 	GROUP admin:bsic {
 //		LUN 0 admin:bsic
 //
 //		INITIATOR iqn.1991-05.com.microsoft:win-1bp99fqu2ri
 //	}
+// +gogo:deepcopy-gen=true
+// +gogo:genproto=true
 type Group struct {
-	Name string `json:"name"`
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 
-	Luns []*Lun `json:"luns"`
+	Luns []*Lun `json:"luns" protobuf:"bytes,2,rep,name=luns"`
 	// iscst agent iqn
-	Initiators []string `json:"initiators"`
+	Initiators []string `json:"initiators" protobuf:"bytes,3,rep,name=initiators"`
 }
 
-// +gogo:deepcopy-gen=true
 // Lun scst logical unit
-//
+// +gogo:deepcopy-gen=true
+// +gogo:genproto=true
 type Lun struct {
 	// the id of lun
-	Id int64 `json:"id"`
+	Id int64 `json:"id" protobuf:"varint,1,opt,name=id"`
 	// the name of device
-	Device string `json:"name"`
+	Device string `json:"name" protobuf:"bytes,2,opt,name=name"`
 }
 
 type System struct {
@@ -347,7 +352,7 @@ func FromCfgFile(cfg string) (*System, error) {
 				if len(parts) != 2 {
 					return nil, fmt.Errorf("%w: bad format '%s' at %s:%d", ErrSyntax, line, cfg, n)
 				}
-				system.Handlers[handlerPtr].Devices[devicePtr].Size, _ = strconv.ParseInt(parts[1], 10, 64)
+				system.Handlers[handlerPtr].Devices[devicePtr].Size_, _ = strconv.ParseInt(parts[1], 10, 64)
 			}
 		//case _CopyManager:
 		case _CopyTgt:
@@ -369,7 +374,7 @@ func FromCfgFile(cfg string) (*System, error) {
 					return nil, fmt.Errorf("%w: bad format '%s' at %s:%d", ErrSyntax, line, cfg, n)
 				}
 				enabled, _ := strconv.ParseInt(parts[1], 10, 64)
-				system.Drivers[driverPtr].Enabled = int8(enabled)
+				system.Drivers[driverPtr].Enabled = int32(enabled)
 			}
 
 		case _IscsiTarget:
@@ -379,7 +384,7 @@ func FromCfgFile(cfg string) (*System, error) {
 					return nil, fmt.Errorf("%w: bad format '%s' at %s:%d", ErrSyntax, line, cfg, n)
 				}
 				enabled, _ := strconv.ParseInt(parts[1], 10, 64)
-				system.Drivers[driverPtr].Targets[targetPtr].Enabled = int8(enabled)
+				system.Drivers[driverPtr].Targets[targetPtr].Enabled = int32(enabled)
 			}
 			if strings.HasPrefix(line, "rel_tgt_id") {
 				if len(parts) != 2 {
@@ -456,7 +461,7 @@ func FromKernel() (*System, error) {
 			device := &Device{Name: dev}
 			device.Filename = readHeader(filepath.Join(subRoot, dev, "filename"))
 			size := readHeader(filepath.Join(subRoot, dev, "size"))
-			device.Size, _ = strconv.ParseInt(size, 10, 64)
+			device.Size_, _ = strconv.ParseInt(size, 10, 64)
 
 			devices[dev] = device
 		}
@@ -531,7 +536,7 @@ func FromKernel() (*System, error) {
 
 			enabled := readHeader(filepath.Join(subRoot, tgt, "enabled"))
 			enabledInt, _ := strconv.ParseInt(enabled, 10, 64)
-			target.Enabled = int8(enabledInt)
+			target.Enabled = int32(enabledInt)
 
 			targets[tgt] = target
 		}
@@ -543,7 +548,7 @@ func FromKernel() (*System, error) {
 
 		enabled := readHeader(filepath.Join(subRoot, "enabled"))
 		enabledInt, _ := strconv.ParseInt(enabled, 10, 64)
-		driver.Enabled = int8(enabledInt)
+		driver.Enabled = int32(enabledInt)
 
 		system.Drivers[driverDir] = driver
 	}

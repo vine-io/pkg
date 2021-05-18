@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// the package could not work in windows
+// Package scst could not work in windows
 package scst
 
 import (

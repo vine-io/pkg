@@ -11,440 +11,390 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package zfs
+// +gogo:deepcopy-gen=package
 package zfs
 
-const (
-	// Pool, Volume, Snapshot lb:status property
-	Ready = "ready"
-	Recycling = "recycling"
-)
-
-const (
-	STATUS = "lb:status"
-)
-
-type VolumeKind string
-
-const (
-	VKVolume     VolumeKind = "volume"
-	VKFileSystem VolumeKind = "filesystem"
-)
-
-type PoolTypes struct {
-	Name string `json:"name"`
+// Pool
+// +gogo:deepcopy-gen=true
+// +gogo:genproto=true
+type Pool struct {
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	// zfs pool 容量
-	Size string `json:"size" zfs:"size"`
+	Size_ string `json:"size" zfs:"size" protobuf:"bytes,111,opt,name=size"`
 
-	Capacity string `json:"capacity" zfs:"capacity"`
+	Capacity string `json:"capacity" zfs:"capacity" protobuf:"bytes,3,opt,name=capacity"`
 
-	AltRoot string `json:"altRoot" zfs:"altroot"`
+	AltRoot string `json:"altRoot" zfs:"altroot" protobuf:"bytes,4,opt,name=altRoot"`
 
-	Health string `json:"health" zfs:"health"`
+	Health string `json:"health" zfs:"health" protobuf:"bytes,5,opt,name=health"`
 
-	Guid string `json:"guid" zfs:"guid"`
+	Guid string `json:"guid" zfs:"guid" protobuf:"bytes,6,opt,name=guid"`
 
-	Version string `json:"version" zfs:"version"`
+	Version string `json:"version" zfs:"version" protobuf:"bytes,7,opt,name=version"`
 
-	BootFs string `json:"bootFs" zfs:"bootfs"`
+	BootFs string `json:"bootFs" zfs:"bootfs" protobuf:"bytes,8,opt,name=bootFs"`
 
-	Delegation string `json:"delegation" zfs:"delegation"`
+	Delegation string `json:"delegation" zfs:"delegation" protobuf:"bytes,9,opt,name=delegation"`
 
-	AutoReplace string `json:"autoReplace" zfs:"authreplace"`
+	AutoReplace string `json:"autoReplace" zfs:"authreplace" protobuf:"bytes,10,opt,name=autoReplace"`
 
-	CacheFile string `json:"cacheFile" zfs:"cachefile"`
+	CacheFile string `json:"cacheFile" zfs:"cachefile" protobuf:"bytes,11,opt,name=cacheFile"`
 
-	FailMode string `json:"failMode" zfs:"failmode"`
+	FailMode string `json:"failMode" zfs:"failmode" protobuf:"bytes,12,opt,name=failMode"`
 
-	ListSnapshots string `json:"listSnapshots" zfs:"listsnapshots"`
+	ListSnapshots string `json:"listSnapshots" zfs:"listsnapshots" protobuf:"bytes,13,opt,name=listSnapshots"`
 
-	AutoExpand string `json:"autoExpand" zfs:"autoexpand"`
+	AutoExpand string `json:"autoExpand" zfs:"autoexpand" protobuf:"bytes,14,opt,name=autoExpand"`
 
-	DedupDitto string `json:"dedupDitto" zfs:"dedupditto"`
+	DedupDitto string `json:"dedupDitto" zfs:"dedupditto" protobuf:"bytes,15,opt,name=dedupDitto"`
 
-	DedupRatio string `json:"dedupRatio" zfs:"dedupratio"`
+	DedupRatio string `json:"dedupRatio" zfs:"dedupratio" protobuf:"bytes,16,opt,name=dedupRatio"`
 
 	// zfs pool 可用空间
-	Free string `json:"free" zfs:"free"`
+	Free string `json:"free" zfs:"free" protobuf:"bytes,17,opt,name=free"`
 
 	// zfs pool 已分配空间
-	Allocated string `json:"allocated" zfs:"allocated"`
+	Allocated string `json:"allocated" zfs:"allocated" protobuf:"bytes,18,opt,name=allocated"`
 
-	Readonly string `json:"readonly" zfs:"readonly"`
+	Readonly string `json:"readonly" zfs:"readonly" protobuf:"bytes,19,opt,name=readonly"`
 
-	AShift string `json:"aShift" zfs:"ashift"`
+	AShift string `json:"aShift" zfs:"ashift" protobuf:"bytes,20,opt,name=aShift"`
 
-	Comment string `json:"comment" zfs:"comment"`
+	Comment string `json:"comment" zfs:"comment" protobuf:"bytes,21,opt,name=comment"`
 
-	ExpandSize string `json:"expandSize" zfs:"expandsize"`
+	ExpandSize string `json:"expandSize" zfs:"expandsize" protobuf:"bytes,22,opt,name=expandSize"`
 
-	Freeing string `json:"freeing" zfs:"freeing"`
+	Freeing string `json:"freeing" zfs:"freeing" protobuf:"bytes,23,opt,name=freeing"`
 
-	Fragmentation string `json:"fragmentation" zfs:"fragmentation"`
+	Fragmentation string `json:"fragmentation" zfs:"fragmentation" protobuf:"bytes,24,opt,name=fragmentation"`
 
-	Leaked string `json:"leaked" zfs:"leaked"`
+	Leaked string `json:"leaked" zfs:"leaked" protobuf:"bytes,25,opt,name=leaked"`
 
-	Multihost string `json:"multihost" zfs:"multihost"`
+	Multihost string `json:"multihost" zfs:"multihost" protobuf:"bytes,26,opt,name=multihost"`
 
-	FeatureAsyncDestroy string `json:"featureAsyncDestroy" zfs:"feature@async_destroy"`
+	FeatureAsyncDestroy string `json:"featureAsyncDestroy" zfs:"feature@async_destroy" protobuf:"bytes,27,opt,name=featureAsyncDestroy"`
 
-	FeatureEmptyBpobj string `json:"featureEmptyBpobj" zfs:"feature@empty_bpobj"`
+	FeatureEmptyBpobj string `json:"featureEmptyBpobj" zfs:"feature@empty_bpobj" protobuf:"bytes,28,opt,name=featureEmptyBpobj"`
 
-	FeatureLz4Compress string `json:"featureLz4Compress" zfs:"feature@lz4_compress"`
+	FeatureLz4Compress string `json:"featureLz4Compress" zfs:"feature@lz4_compress" protobuf:"bytes,29,opt,name=featureLz4Compress"`
 
-	FeatureMultiVdevCrashDump string `json:"featureMultiVdevCrashDump" zfs:"feature@multi_vdev_crash_dump"`
+	FeatureMultiVdevCrashDump string `json:"featureMultiVdevCrashDump" zfs:"feature@multi_vdev_crash_dump" protobuf:"bytes,30,opt,name=featureMultiVdevCrashDump"`
 
-	FeatureSpaceMapHistogram string `json:"featureSpaceMapHistogram" zfs:"feature@spacemap_histogram"`
+	FeatureSpaceMapHistogram string `json:"featureSpaceMapHistogram" zfs:"feature@spacemap_histogram" protobuf:"bytes,31,opt,name=featureSpaceMapHistogram"`
 
-	FeatureEnabledTxg string `json:"featureEnabledTxg" zfs:"feature@enabled_txg"`
+	FeatureEnabledTxg string `json:"featureEnabledTxg" zfs:"feature@enabled_txg" protobuf:"bytes,32,opt,name=featureEnabledTxg"`
 
-	FeatureHoleBirth string `json:"featureHoleBirth" zfs:"feature@hole_birth"`
+	FeatureHoleBirth string `json:"featureHoleBirth" zfs:"feature@hole_birth" protobuf:"bytes,33,opt,name=featureHoleBirth"`
 
-	FeatureExtensibleDataset string `json:"featureExtensibleDataset" zfs:"feature@extensible_dataset"`
+	FeatureExtensibleDataset string `json:"featureExtensibleDataset" zfs:"feature@extensible_dataset" protobuf:"bytes,34,opt,name=featureExtensibleDataset"`
 
-	FeatureEmbeddedData string `json:"featureEmbeddedData" zfs:"feature@embedded_data"`
+	FeatureEmbeddedData string `json:"featureEmbeddedData" zfs:"feature@embedded_data" protobuf:"bytes,35,opt,name=featureEmbeddedData"`
 
-	FeatureBookmarks string `json:"featureBookmarks" zfs:"feature@bookmarks"`
+	FeatureBookmarks string `json:"featureBookmarks" zfs:"feature@bookmarks" protobuf:"bytes,36,opt,name=featureBookmarks"`
 
-	FeatureFilesystemLimits string `json:"featureFilesystemLimits" zfs:"feature@filesystem_limits"`
+	FeatureFilesystemLimits string `json:"featureFilesystemLimits" zfs:"feature@filesystem_limits" protobuf:"bytes,37,opt,name=featureFilesystemLimits"`
 
-	FeatureLargeBlocks string `json:"featureLargeBlocks" zfs:"feature@large_blocks"`
+	FeatureLargeBlocks string `json:"featureLargeBlocks" zfs:"feature@large_blocks" protobuf:"bytes,38,opt,name=featureLargeBlocks"`
 
-	FeatureLargeDnode string `json:"featureLargeDnode" zfs:"feature@large_dnode"`
+	FeatureLargeDnode string `json:"featureLargeDnode" zfs:"feature@large_dnode" protobuf:"bytes,39,opt,name=featureLargeDnode"`
 
-	FeatureSha512 string `json:"featureSha512" zfs:"feature@sha512"`
+	FeatureSha512 string `json:"featureSha512" zfs:"feature@sha512" protobuf:"bytes,40,opt,name=featureSha512"`
 
-	FeatureSkein string `json:"featureSkein" zfs:"feature@skein"`
+	FeatureSkein string `json:"featureSkein" zfs:"feature@skein" protobuf:"bytes,41,opt,name=featureSkein"`
 
-	FeatureEdonr string `json:"featureEdonr" zfs:"feature@edonr "`
+	FeatureEdonr string `json:"featureEdonr" zfs:"feature@edonr " protobuf:"bytes,42,opt,name=featureEdonr"`
 
-	FeatureUserobjAccounting string `json:"featureUserobjAccounting" zfs:"feature@userobj_accounting"`
+	FeatureUserobjAccounting string `json:"featureUserobjAccounting" zfs:"feature@userobj_accounting" protobuf:"bytes,43,opt,name=featureUserobjAccounting"`
 
 	// tank filesystem
-	Type string `json:"type" zfs:"type"`
+	Type string `json:"type" zfs:"type" protobuf:"bytes,44,opt,name=type"`
 
-	Creation string `json:"creation" zfs:"creation"`
+	Creation string `json:"creation" zfs:"creation" protobuf:"bytes,45,opt,name=creation"`
 
-	Used string `json:"used" zfs:"used"`
+	Used string `json:"used" zfs:"used" protobuf:"bytes,46,opt,name=used"`
 
-	Available string `json:"available" zfs:"available"`
+	Available string `json:"available" zfs:"available" protobuf:"bytes,47,opt,name=available"`
 
-	Referenced string `json:"referenced" zfs:"referenced"`
+	Referenced string `json:"referenced" zfs:"referenced" protobuf:"bytes,48,opt,name=referenced"`
 
-	CompressRatio string `json:"compressRatio" zfs:"compressratio"`
+	CompressRatio string `json:"compressRatio" zfs:"compressratio" protobuf:"bytes,49,opt,name=compressRatio"`
 
-	Mounted string `json:"mounted" zfs:"mounted"`
+	Mounted string `json:"mounted" zfs:"mounted" protobuf:"bytes,50,opt,name=mounted"`
 
-	Quota string `json:"quota" zfs:"quota"`
+	Quota string `json:"quota" zfs:"quota" protobuf:"bytes,51,opt,name=quota"`
 
-	Reservation string `json:"reservation" zfs:"reservation"`
+	Reservation string `json:"reservation" zfs:"reservation" protobuf:"bytes,52,opt,name=reservation"`
 
-	RecordSize string `json:"recordSize" zfs:"recordsize"`
+	RecordSize string `json:"recordSize" zfs:"recordsize" protobuf:"bytes,53,opt,name=recordSize"`
 
-	MountPoint string `json:"mountPoint" zfs:"mountpoint"`
+	MountPoint string `json:"mountPoint" zfs:"mountpoint" protobuf:"bytes,54,opt,name=mountPoint"`
 
-	SharenFs string `json:"sharenFs" zfs:"sharenfs"`
+	SharenFs string `json:"sharenFs" zfs:"sharenfs" protobuf:"bytes,55,opt,name=sharenFs"`
 
-	Checksum string `json:"checksum" zfs:"checksum"`
+	Checksum string `json:"checksum" zfs:"checksum" protobuf:"bytes,56,opt,name=checksum"`
 
-	Compression string `json:"compression" zfs:"compression"`
+	Compression string `json:"compression" zfs:"compression" protobuf:"bytes,57,opt,name=compression"`
 
-	ATime string `json:"aTime" zfs:"atime"`
+	ATime string `json:"aTime" zfs:"atime" protobuf:"bytes,58,opt,name=aTime"`
 
-	Devices string `json:"devices" zfs:"devices"`
+	Devices string `json:"devices" zfs:"devices" protobuf:"bytes,59,opt,name=devices"`
 
-	Exec string `json:"exec" zfs:"exec"`
+	Exec string `json:"exec" zfs:"exec" protobuf:"bytes,60,opt,name=exec"`
 
-	SetUid string `json:"setUid" zfs:"setuid"`
+	SetUid string `json:"setUid" zfs:"setuid" protobuf:"bytes,61,opt,name=setUid"`
 
-	Zoned string `json:"zoned" zfs:"zoned"`
+	Zoned string `json:"zoned" zfs:"zoned" protobuf:"bytes,62,opt,name=zoned"`
 
-	SnapDir string `json:"snapDir" zfs:"snapdir"`
+	SnapDir string `json:"snapDir" zfs:"snapdir" protobuf:"bytes,63,opt,name=snapDir"`
 
-	AclinHerit string `json:"aclinHerit" zfs:"aclinherit"`
+	AclinHerit string `json:"aclinHerit" zfs:"aclinherit" protobuf:"bytes,64,opt,name=aclinHerit"`
 
-	Createtxg string `json:"createtxg" zfs:"createtxg"`
+	Createtxg string `json:"createtxg" zfs:"createtxg" protobuf:"bytes,65,opt,name=createtxg"`
 
-	CanMount string `json:"canMount" zfs:"canmount"`
+	CanMount string `json:"canMount" zfs:"canmount" protobuf:"bytes,66,opt,name=canMount"`
 
-	Xattr string `json:"xattr" zfs:"xattr"`
+	Xattr string `json:"xattr" zfs:"xattr" protobuf:"bytes,67,opt,name=xattr"`
 
-	Copies string `json:"copies" zfs:"copies"`
+	Copies string `json:"copies" zfs:"copies" protobuf:"bytes,68,opt,name=copies"`
 
-	Utf8only string `json:"utf8Only" zfs:"utf8only"`
+	Utf8only string `json:"utf8Only" zfs:"utf8only" protobuf:"bytes,69,opt,name=utf8Only"`
 
-	Normalization string `json:"normalization" zfs:"normalization"`
+	Normalization string `json:"normalization" zfs:"normalization" protobuf:"bytes,70,opt,name=normalization"`
 
-	Casesensitivity string `json:"casesensitivity" zfs:"casesensitivity"`
+	Casesensitivity string `json:"casesensitivity" zfs:"casesensitivity" protobuf:"bytes,71,opt,name=casesensitivity"`
 
-	Vscan string `json:"vscan" zfs:"vscan"`
+	Vscan string `json:"vscan" zfs:"vscan" protobuf:"bytes,72,opt,name=vscan"`
 
-	Nbmand string `json:"nbmand" zfs:"nbmand"`
+	Nbmand string `json:"nbmand" zfs:"nbmand" protobuf:"bytes,73,opt,name=nbmand"`
 
-	Sharesmb string `json:"sharesmb" zfs:"sharesmb"`
+	Sharesmb string `json:"sharesmb" zfs:"sharesmb" protobuf:"bytes,74,opt,name=sharesmb"`
 
-	Refquota string `json:"refquota" zfs:"refquota"`
+	Refquota string `json:"refquota" zfs:"refquota" protobuf:"bytes,75,opt,name=refquota"`
 
-	Refreservation string `json:"refreservation" zfs:"refreservation"`
+	Refreservation string `json:"refreservation" zfs:"refreservation" protobuf:"bytes,76,opt,name=refreservation"`
 
-	Primarycache string `json:"primarycache" zfs:"primarycache"`
+	Primarycache string `json:"primarycache" zfs:"primarycache" protobuf:"bytes,77,opt,name=primarycache"`
 
-	Secondarycache string `json:"secondarycache" zfs:"secondarycache"`
+	Secondarycache string `json:"secondarycache" zfs:"secondarycache" protobuf:"bytes,78,opt,name=secondarycache"`
 
-	Usedbysnapshots string `json:"usedbysnapshots" zfs:"usedbysnapshots"`
+	Usedbysnapshots string `json:"usedbysnapshots" zfs:"usedbysnapshots" protobuf:"bytes,79,opt,name=usedbysnapshots"`
 
-	Usedbydataset string `json:"usedbydataset" zfs:"usedbydataset"`
+	Usedbydataset string `json:"usedbydataset" zfs:"usedbydataset" protobuf:"bytes,80,opt,name=usedbydataset"`
 
-	Usedbychildren string `json:"usedbychildren" zfs:"usedbychildren"`
+	Usedbychildren string `json:"usedbychildren" zfs:"usedbychildren" protobuf:"bytes,81,opt,name=usedbychildren"`
 
-	Usedbyrefreservation string `json:"usedbyrefreservation" zfs:"usedbyrefreservation"`
+	Usedbyrefreservation string `json:"usedbyrefreservation" zfs:"usedbyrefreservation" protobuf:"bytes,82,opt,name=usedbyrefreservation"`
 
-	Logbias string `json:"logbias" zfs:"logbias"`
+	Logbias string `json:"logbias" zfs:"logbias" protobuf:"bytes,83,opt,name=logbias"`
 
-	Dedup string `json:"dedup" zfs:"dedup"`
+	Dedup string `json:"dedup" zfs:"dedup" protobuf:"bytes,84,opt,name=dedup"`
 
-	Mlslabel string `json:"mlslabel" zfs:"mlslabel"`
+	Mlslabel string `json:"mlslabel" zfs:"mlslabel" protobuf:"bytes,85,opt,name=mlslabel"`
 
-	Sync string `json:"sync" zfs:"sync"`
+	Sync string `json:"sync" zfs:"sync" protobuf:"bytes,86,opt,name=sync"`
 
-	Dnodesize string `json:"dnodesize" zfs:"dnodesize"`
+	Dnodesize string `json:"dnodesize" zfs:"dnodesize" protobuf:"bytes,87,opt,name=dnodesize"`
 
-	Refcompressratio string `json:"refcompressratio" zfs:"refcompressratio"`
+	Refcompressratio string `json:"refcompressratio" zfs:"refcompressratio" protobuf:"bytes,88,opt,name=refcompressratio"`
 
-	Written string `json:"written" zfs:"written"`
+	Written string `json:"written" zfs:"written" protobuf:"bytes,89,opt,name=written"`
 
-	Logicalused string `json:"logicalused" zfs:"logicalused"`
+	Logicalused string `json:"logicalused" zfs:"logicalused" protobuf:"bytes,90,opt,name=logicalused"`
 
-	Logicalreferenced string `json:"logicalreferenced" zfs:"logicalreferenced"`
+	Logicalreferenced string `json:"logicalreferenced" zfs:"logicalreferenced" protobuf:"bytes,91,opt,name=logicalreferenced"`
 
-	Volmode string `json:"volmode" zfs:"volmode"`
+	Volmode string `json:"volmode" zfs:"volmode" protobuf:"bytes,92,opt,name=volmode"`
 
-	FilesystemLimit string `json:"filesystemLimit" zfs:"filesystem_limit"`
+	FilesystemLimit string `json:"filesystemLimit" zfs:"filesystem_limit" protobuf:"bytes,93,opt,name=filesystemLimit"`
 
-	SnapshotLimit string `json:"snapshotLimit" zfs:"snapshot_limit"`
+	SnapshotLimit string `json:"snapshotLimit" zfs:"snapshot_limit" protobuf:"bytes,94,opt,name=snapshotLimit"`
 
-	FilesystemCount string `json:"filesystemCount" zfs:"filesystem_count"`
+	FilesystemCount string `json:"filesystemCount" zfs:"filesystem_count" protobuf:"bytes,95,opt,name=filesystemCount"`
 
-	SnapshotCount string `json:"snapshotCount" zfs:"snapshot_count"`
+	SnapshotCount string `json:"snapshotCount" zfs:"snapshot_count" protobuf:"bytes,96,opt,name=snapshotCount"`
 
-	Snapdev string `json:"snapdev" zfs:"snapdev"`
+	Snapdev string `json:"snapdev" zfs:"snapdev" protobuf:"bytes,97,opt,name=snapdev"`
 
-	Acltype string `json:"acltype" zfs:"acltype"`
+	Acltype string `json:"acltype" zfs:"acltype" protobuf:"bytes,98,opt,name=acltype"`
 
-	Context string `json:"context" zfs:"context"`
+	Context string `json:"context" zfs:"context" protobuf:"bytes,99,opt,name=context"`
 
-	Fscontext string `json:"fscontext" zfs:"fscontext"`
+	Fscontext string `json:"fscontext" zfs:"fscontext" protobuf:"bytes,100,opt,name=fscontext"`
 
-	Defcontext string `json:"defcontext" zfs:"defcontext"`
+	Defcontext string `json:"defcontext" zfs:"defcontext" protobuf:"bytes,101,opt,name=defcontext"`
 
-	Rootcontext string `json:"rootcontext" zfs:"rootcontext"`
+	Rootcontext string `json:"rootcontext" zfs:"rootcontext" protobuf:"bytes,102,opt,name=rootcontext"`
 
-	Relatime string `json:"relatime" zfs:"relatime"`
+	Relatime string `json:"relatime" zfs:"relatime" protobuf:"bytes,103,opt,name=relatime"`
 
-	RedundantMetadata string `json:"redundantMetadata" zfs:"redundant_metadata"`
+	RedundantMetadata string `json:"redundantMetadata" zfs:"redundant_metadata" protobuf:"bytes,104,opt,name=redundantMetadata"`
 
-	Overlay string `json:"overlay" zfs:"overlay"`
+	Overlay string `json:"overlay" zfs:"overlay" protobuf:"bytes,105,opt,name=overlay"`
 
-	Encryption string `json:"encryption" zfs:"encryption"`
+	Encryption string `json:"encryption" zfs:"encryption" protobuf:"bytes,106,opt,name=encryption"`
 
-	Keylocation string `json:"keylocation" zfs:"keylocation"`
+	Keylocation string `json:"keylocation" zfs:"keylocation" protobuf:"bytes,107,opt,name=keylocation"`
 
-	Keyformat string `json:"keyformat" zfs:"keyformat"`
+	Keyformat string `json:"keyformat" zfs:"keyformat" protobuf:"bytes,108,opt,name=keyformat"`
 
-	Pbkdf2iters string `json:"pbkdf2Iters" zfs:"pbkdf2iters"`
+	Pbkdf2iters string `json:"pbkdf2Iters" zfs:"pbkdf2iters" protobuf:"bytes,109,opt,name=pbkdf2Iters"`
 
-	SpecialSmallBlocks string `json:"specialSmallBlocks" zfs:"special_small_blocks"`
-	// 自定义属性，用于垃圾回收
-	Status string `json:"status" zfs:"lb:status"`
+	SpecialSmallBlocks string `json:"specialSmallBlocks" zfs:"special_small_blocks" protobuf:"bytes,110,opt,name=specialSmallBlocks"`
 }
 
-type VolumeTypes struct {
-	Name string `json:"name"`
-
-	Type string `json:"type" zfs:"type"`
-
-	Creation string `json:"creation" zfs:"creation"`
-
-	Used string `json:"used" zfs:"used"`
-
-	Available string `json:"available" zfs:"available"`
-
-	Referenced string `json:"referenced" zfs:"referenced"`
-
-	Compressratio string `json:"compressratio" zfs:"compressratio"`
-
-	Reservation string `json:"reservation" zfs:"reservation"`
-
-	Volsize string `json:"volsize" zfs:"volsize"`
-
-	Volblocksize string `json:"volblocksize" zfs:"volblocksize"`
-
-	Checksum string `json:"checksum" zfs:"checksum"`
-
-	Compression string `json:"compression" zfs:"compression"`
-
-	Readonly string `json:"readonly" zfs:"readonly"`
-
-	Copies string `json:"copies" zfs:"copies"`
-
-	Refreservation string `json:"refreservation" zfs:"refreservation"`
-
-	Guid string `json:"guid" zfs:"guid"`
-
-	Primarycache string `json:"primarycache" zfs:"primarycache"`
-
-	Secondarycache string `json:"secondarycache" zfs:"secondarycache"`
-
-	Usedbysnapshots string `json:"usedbysnapshots" zfs:"usedbysnapshots"`
-
-	Usedbydataset string `json:"usedbydataset" zfs:"usedbydataset"`
-
-	Usedbychildren string `json:"usedbychildren" zfs:"usedbychildren"`
-
-	Usedbyrefreservation string `json:"usedbyrefreservation" zfs:"usedbyrefreservation"`
-
-	Logbias string `json:"logbias" zfs:"logbias"`
-
-	Dedup string `json:"dedup" zfs:"dedup"`
-
-	Mlslabel string `json:"mlslabel" zfs:"mlslabel"`
-
-	Sync string `json:"sync" zfs:"sync"`
-
-	Refcompressratio string `json:"refcompressratio" zfs:"refcompressratio"`
-
-	Written string `json:"written" zfs:"written"`
-
-	Logicalused string `json:"logicalused" zfs:"logicalused"`
-
-	Logicalreferenced string `json:"logicalreferenced" zfs:"logicalreferenced"`
-
-	Volmode string `json:"volmode" zfs:"volmode"`
-
-	FilesystemLimit string `json:"filesystemLimit" zfs:"filesystem_limit"`
-
-	SnapshotLimit string `json:"snapshotLimit" zfs:"snapshot_limit"`
-
-	SnapshotCount string `json:"snapshotCount" zfs:"snapshot_count"`
-
-	Snapdev string `json:"snapdev" zfs:"snapdev"`
-
-	Acltype string `json:"acltype" zfs:"acltype"`
-
-	Context string `json:"context" zfs:"context"`
-
-	Fscontext string `json:"fscontext" zfs:"fscontext"`
-
-	Defcontext string `json:"defcontext" zfs:"defcontext"`
-
-	Rootcontext string `json:"rootcontext" zfs:"rootcontext"`
-
-	RedundantMetadata string `json:"redundantMetadata" zfs:"redundant_metadata"`
-	// 自定义属性
-	Status string `json:"status" zfs:"lb:status"`
-}
-
-type SnapshotTypes struct {
-	Pool string `json:"pool"`
-
-	Parent string `json:"parent"`
-
-	Name string `json:"name"`
-
-	Type string `json:"type" zfs:"type"`
-
-	Creation string `json:"creation" zfs:"creation"`
-
-	Used string `json:"used" zfs:"used"`
-
-	Referenced string `json:"referenced" zfs:"referenced"`
-
-	Compressratio string `json:"compressratio" zfs:"compressratio"`
-
-	Devices string `json:"devices" zfs:"devices"`
-
-	Exec string `json:"exec" zfs:"exec"`
-
-	Setuid string `json:"setuid" zfs:"setuid"`
-
-	Createtxg string `json:"createtxg" zfs:"createtxg"`
-
-	Version string `json:"version" zfs:"version"`
-
-	Utf8only string `json:"utf8Only" zfs:"utf8only"`
-
-	Normalization string `json:"normalization" zfs:"normalization"`
-
-	Casesensitivity string `json:"casesensitivity" zfs:"casesensitivity"`
-
-	Vscan string `json:"vscan" zfs:"vscan"`
-
-	Nbmand string `json:"nbmand" zfs:"nbmand"`
-
-	Guid string `json:"guid" zfs:"guid"`
-
-	Primarycache string `json:"primarycache" zfs:"primarycache"`
-
-	Secondarycache string `json:"secondarycache" zfs:"secondarycache"`
-
-	DeferDestroy string `json:"deferDestroy" zfs:"defer_destroy"`
-
-	Userrefs string `json:"userrefs" zfs:"userrefs"`
-
-	Mlslabel string `json:"mlslabel" zfs:"mlslabel"`
-
-	Refcompressratio string `json:"refcompressratio" zfs:"refcompressratio"`
-
-	Written string `json:"written" zfs:"written"`
-
-	Logicalreferenced string `json:"logicalreferenced" zfs:"logicalreferenced"`
-
-	Acltype string `json:"acltype" zfs:"acltype"`
-
-	Context string `json:"context" zfs:"context"`
-
-	Fscontext string `json:"fscontext" zfs:"fscontext"`
-
-	Defcontext string `json:"defcontext" zfs:"defcontext"`
-
-	Rootcontext string `json:"rootcontext" zfs:"rootcontext"`
-	// 自定义属性
-	Status string `json:"status" zfs:"lb:status"`
-}
-
+// Volume
 // +gogo:deepcopy-gen=true
-type Pool struct {
-	Name string `json:"name"`
-
-	Types PoolTypes `json:"types"`
-
-	Volumes map[string]*Volume `json:"volumes"`
-
-	Snapshots map[string]*Snapshot `json:"snapshots"`
-
-	Clones map[string]*Volume `json:"clones"`
-}
-
-// +gogo:deepcopy-gen=true
+// +gogo:genproto=true
 type Volume struct {
-	Name string `json:"name"`
-	// if this field is not empty, volume is a clone.
-	// this field empty snapshot's name.
-	Parent string `json:"parent"`
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 
-	Kind VolumeKind `json:"kind"`
+	Type string `json:"type" zfs:"type" protobuf:"bytes,2,opt,name=type"`
 
-	Types VolumeTypes `json:"types"`
+	Creation string `json:"creation" zfs:"creation" protobuf:"bytes,3,opt,name=creation"`
 
-	Snapshots map[string]*Snapshot `json:"snapshots"`
+	Used string `json:"used" zfs:"used" protobuf:"bytes,4,opt,name=used"`
+
+	Available string `json:"available" zfs:"available" protobuf:"bytes,5,opt,name=available"`
+
+	Referenced string `json:"referenced" zfs:"referenced" protobuf:"bytes,6,opt,name=referenced"`
+
+	Compressratio string `json:"compressratio" zfs:"compressratio" protobuf:"bytes,7,opt,name=compressratio"`
+
+	Reservation string `json:"reservation" zfs:"reservation" protobuf:"bytes,8,opt,name=reservation"`
+
+	Volsize string `json:"volsize" zfs:"volsize" protobuf:"bytes,9,opt,name=volsize"`
+
+	Volblocksize string `json:"volblocksize" zfs:"volblocksize" protobuf:"bytes,10,opt,name=volblocksize"`
+
+	Checksum string `json:"checksum" zfs:"checksum" protobuf:"bytes,11,opt,name=checksum"`
+
+	Compression string `json:"compression" zfs:"compression" protobuf:"bytes,12,opt,name=compression"`
+
+	Readonly string `json:"readonly" zfs:"readonly" protobuf:"bytes,13,opt,name=readonly"`
+
+	Copies string `json:"copies" zfs:"copies" protobuf:"bytes,14,opt,name=copies"`
+
+	Refreservation string `json:"refreservation" zfs:"refreservation" protobuf:"bytes,15,opt,name=refreservation"`
+
+	Guid string `json:"guid" zfs:"guid" protobuf:"bytes,16,opt,name=guid"`
+
+	Primarycache string `json:"primarycache" zfs:"primarycache" protobuf:"bytes,17,opt,name=primarycache"`
+
+	Secondarycache string `json:"secondarycache" zfs:"secondarycache" protobuf:"bytes,18,opt,name=secondarycache"`
+
+	Usedbysnapshots string `json:"usedbysnapshots" zfs:"usedbysnapshots" protobuf:"bytes,19,opt,name=usedbysnapshots"`
+
+	Usedbydataset string `json:"usedbydataset" zfs:"usedbydataset" protobuf:"bytes,20,opt,name=usedbydataset"`
+
+	Usedbychildren string `json:"usedbychildren" zfs:"usedbychildren" protobuf:"bytes,21,opt,name=usedbychildren"`
+
+	Usedbyrefreservation string `json:"usedbyrefreservation" zfs:"usedbyrefreservation" protobuf:"bytes,22,opt,name=usedbyrefreservation"`
+
+	Logbias string `json:"logbias" zfs:"logbias" protobuf:"bytes,23,opt,name=logbias"`
+
+	Dedup string `json:"dedup" zfs:"dedup" protobuf:"bytes,24,opt,name=dedup"`
+
+	Mlslabel string `json:"mlslabel" zfs:"mlslabel" protobuf:"bytes,25,opt,name=mlslabel"`
+
+	Sync string `json:"sync" zfs:"sync" protobuf:"bytes,26,opt,name=sync"`
+
+	Refcompressratio string `json:"refcompressratio" zfs:"refcompressratio" protobuf:"bytes,27,opt,name=refcompressratio"`
+
+	Written string `json:"written" zfs:"written" protobuf:"bytes,28,opt,name=written"`
+
+	Logicalused string `json:"logicalused" zfs:"logicalused" protobuf:"bytes,29,opt,name=logicalused"`
+
+	Logicalreferenced string `json:"logicalreferenced" zfs:"logicalreferenced" protobuf:"bytes,30,opt,name=logicalreferenced"`
+
+	Volmode string `json:"volmode" zfs:"volmode" protobuf:"bytes,31,opt,name=volmode"`
+
+	FilesystemLimit string `json:"filesystemLimit" zfs:"filesystem_limit" protobuf:"bytes,32,opt,name=filesystemLimit"`
+
+	SnapshotLimit string `json:"snapshotLimit" zfs:"snapshot_limit" protobuf:"bytes,33,opt,name=snapshotLimit"`
+
+	SnapshotCount string `json:"snapshotCount" zfs:"snapshot_count" protobuf:"bytes,34,opt,name=snapshotCount"`
+
+	Snapdev string `json:"snapdev" zfs:"snapdev" protobuf:"bytes,35,opt,name=snapdev"`
+
+	Acltype string `json:"acltype" zfs:"acltype" protobuf:"bytes,36,opt,name=acltype"`
+
+	Context string `json:"context" zfs:"context" protobuf:"bytes,37,opt,name=context"`
+
+	Fscontext string `json:"fscontext" zfs:"fscontext" protobuf:"bytes,38,opt,name=fscontext"`
+
+	Defcontext string `json:"defcontext" zfs:"defcontext" protobuf:"bytes,39,opt,name=defcontext"`
+
+	Rootcontext string `json:"rootcontext" zfs:"rootcontext" protobuf:"bytes,40,opt,name=rootcontext"`
+
+	RedundantMetadata string `json:"redundantMetadata" zfs:"redundant_metadata" protobuf:"bytes,41,opt,name=redundantMetadata"`
 }
 
+// Snapshot
 // +gogo:deepcopy-gen=true
+// +gogo:genproto=true
 type Snapshot struct {
-	Name string `json:"name"`
-	// volume name
-	Source string `json:"source"`
+	Pool string `json:"pool" protobuf:"bytes,1,opt,name=pool"`
 
-	Types SnapshotTypes `json:"types"`
+	Parent string `json:"parent" protobuf:"bytes,2,opt,name=parent"`
 
-	Clones map[string]*Volume `json:"clones"`
+	Name string `json:"name" protobuf:"bytes,3,opt,name=name"`
+
+	Type string `json:"type" zfs:"type" protobuf:"bytes,4,opt,name=type"`
+
+	Creation string `json:"creation" zfs:"creation" protobuf:"bytes,5,opt,name=creation"`
+
+	Used string `json:"used" zfs:"used" protobuf:"bytes,6,opt,name=used"`
+
+	Referenced string `json:"referenced" zfs:"referenced" protobuf:"bytes,7,opt,name=referenced"`
+
+	Compressratio string `json:"compressratio" zfs:"compressratio" protobuf:"bytes,8,opt,name=compressratio"`
+
+	Devices string `json:"devices" zfs:"devices" protobuf:"bytes,9,opt,name=devices"`
+
+	Exec string `json:"exec" zfs:"exec" protobuf:"bytes,10,opt,name=exec"`
+
+	Setuid string `json:"setuid" zfs:"setuid" protobuf:"bytes,11,opt,name=setuid"`
+
+	Createtxg string `json:"createtxg" zfs:"createtxg" protobuf:"bytes,12,opt,name=createtxg"`
+
+	Version string `json:"version" zfs:"version" protobuf:"bytes,13,opt,name=version"`
+
+	Utf8only string `json:"utf8Only" zfs:"utf8only" protobuf:"bytes,14,opt,name=utf8Only"`
+
+	Normalization string `json:"normalization" zfs:"normalization" protobuf:"bytes,15,opt,name=normalization"`
+
+	Casesensitivity string `json:"casesensitivity" zfs:"casesensitivity" protobuf:"bytes,16,opt,name=casesensitivity"`
+
+	Vscan string `json:"vscan" zfs:"vscan" protobuf:"bytes,17,opt,name=vscan"`
+
+	Nbmand string `json:"nbmand" zfs:"nbmand" protobuf:"bytes,18,opt,name=nbmand"`
+
+	Guid string `json:"guid" zfs:"guid" protobuf:"bytes,19,opt,name=guid"`
+
+	Primarycache string `json:"primarycache" zfs:"primarycache" protobuf:"bytes,20,opt,name=primarycache"`
+
+	Secondarycache string `json:"secondarycache" zfs:"secondarycache" protobuf:"bytes,21,opt,name=secondarycache"`
+
+	DeferDestroy string `json:"deferDestroy" zfs:"defer_destroy" protobuf:"bytes,22,opt,name=deferDestroy"`
+
+	Userrefs string `json:"userrefs" zfs:"userrefs" protobuf:"bytes,23,opt,name=userrefs"`
+
+	Mlslabel string `json:"mlslabel" zfs:"mlslabel" protobuf:"bytes,24,opt,name=mlslabel"`
+
+	Refcompressratio string `json:"refcompressratio" zfs:"refcompressratio" protobuf:"bytes,25,opt,name=refcompressratio"`
+
+	Written string `json:"written" zfs:"written" protobuf:"bytes,26,opt,name=written"`
+
+	Logicalreferenced string `json:"logicalreferenced" zfs:"logicalreferenced" protobuf:"bytes,27,opt,name=logicalreferenced"`
+
+	Acltype string `json:"acltype" zfs:"acltype" protobuf:"bytes,28,opt,name=acltype"`
+
+	Context string `json:"context" zfs:"context" protobuf:"bytes,29,opt,name=context"`
+
+	Fscontext string `json:"fscontext" zfs:"fscontext" protobuf:"bytes,30,opt,name=fscontext"`
+
+	Defcontext string `json:"defcontext" zfs:"defcontext" protobuf:"bytes,31,opt,name=defcontext"`
+
+	Rootcontext string `json:"rootcontext" zfs:"rootcontext" protobuf:"bytes,32,opt,name=rootcontext"`
 }

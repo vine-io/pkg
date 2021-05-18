@@ -20,52 +20,6 @@ package zfs
 // DeepCopyInto is an auto-generated deepcopy function, coping the receiver, writing into out. in must be no-nil.
 func (in *Pool) DeepCopyInto(out *Pool) {
 	*out = *in
-	out.Types = in.Types
-	if in.Volumes != nil {
-		in, out := &in.Volumes, &out.Volumes
-		*out = make(map[string]*Volume, len(*in))
-		for key, val := range *in {
-			var outVal *Volume
-			if val == nil {
-				(*out)[key] = nil
-			} else {
-				in, out := &val, &outVal
-				*out = new(Volume)
-				(*in).DeepCopyInto(*out)
-			}
-			(*out)[key] = outVal
-		}
-	}
-	if in.Snapshots != nil {
-		in, out := &in.Snapshots, &out.Snapshots
-		*out = make(map[string]*Snapshot, len(*in))
-		for key, val := range *in {
-			var outVal *Snapshot
-			if val == nil {
-				(*out)[key] = nil
-			} else {
-				in, out := &val, &outVal
-				*out = new(Snapshot)
-				(*in).DeepCopyInto(*out)
-			}
-			(*out)[key] = outVal
-		}
-	}
-	if in.Clones != nil {
-		in, out := &in.Clones, &out.Clones
-		*out = make(map[string]*Volume, len(*in))
-		for key, val := range *in {
-			var outVal *Volume
-			if val == nil {
-				(*out)[key] = nil
-			} else {
-				in, out := &val, &outVal
-				*out = new(Volume)
-				(*in).DeepCopyInto(*out)
-			}
-			(*out)[key] = outVal
-		}
-	}
 	return
 }
 
@@ -82,22 +36,6 @@ func (in *Pool) DeepCopy() *Pool {
 // DeepCopyInto is an auto-generated deepcopy function, coping the receiver, writing into out. in must be no-nil.
 func (in *Snapshot) DeepCopyInto(out *Snapshot) {
 	*out = *in
-	out.Types = in.Types
-	if in.Clones != nil {
-		in, out := &in.Clones, &out.Clones
-		*out = make(map[string]*Volume, len(*in))
-		for key, val := range *in {
-			var outVal *Volume
-			if val == nil {
-				(*out)[key] = nil
-			} else {
-				in, out := &val, &outVal
-				*out = new(Volume)
-				(*in).DeepCopyInto(*out)
-			}
-			(*out)[key] = outVal
-		}
-	}
 	return
 }
 
@@ -114,22 +52,6 @@ func (in *Snapshot) DeepCopy() *Snapshot {
 // DeepCopyInto is an auto-generated deepcopy function, coping the receiver, writing into out. in must be no-nil.
 func (in *Volume) DeepCopyInto(out *Volume) {
 	*out = *in
-	out.Types = in.Types
-	if in.Snapshots != nil {
-		in, out := &in.Snapshots, &out.Snapshots
-		*out = make(map[string]*Snapshot, len(*in))
-		for key, val := range *in {
-			var outVal *Snapshot
-			if val == nil {
-				(*out)[key] = nil
-			} else {
-				in, out := &val, &outVal
-				*out = new(Snapshot)
-				(*in).DeepCopyInto(*out)
-			}
-			(*out)[key] = outVal
-		}
-	}
 	return
 }
 
