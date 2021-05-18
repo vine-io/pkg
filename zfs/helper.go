@@ -30,7 +30,7 @@ import (
 	"strings"
 )
 
-func setValue(data []byte, into interface{}) {
+func SetValue(data []byte, into interface{}) {
 	reader := bytes.NewReader(data)
 	rd := bufio.NewReader(reader)
 	for {
