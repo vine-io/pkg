@@ -27,7 +27,7 @@ message Pool {
   optional string name = 1;
 
   // zfs pool 容量
-  optional string size = 111;
+  optional string size = 2;
 
   optional string capacity = 3;
 
@@ -253,69 +253,67 @@ message Pool {
 // +gogo:deepcopy-gen=true
 // +gogo:genproto=true
 message Snapshot {
-  optional string pool = 1;
+  optional string parent = 1;
 
-  optional string parent = 2;
+  optional string name = 2;
 
-  optional string name = 3;
+  optional string type = 3;
 
-  optional string type = 4;
+  optional string creation = 4;
 
-  optional string creation = 5;
+  optional string used = 5;
 
-  optional string used = 6;
+  optional string referenced = 6;
 
-  optional string referenced = 7;
+  optional string compressratio = 7;
 
-  optional string compressratio = 8;
+  optional string devices = 8;
 
-  optional string devices = 9;
+  optional string exec = 9;
 
-  optional string exec = 10;
+  optional string setuid = 10;
 
-  optional string setuid = 11;
+  optional string createtxg = 11;
 
-  optional string createtxg = 12;
+  optional string version = 12;
 
-  optional string version = 13;
+  optional string utf8Only = 13;
 
-  optional string utf8Only = 14;
+  optional string normalization = 14;
 
-  optional string normalization = 15;
+  optional string casesensitivity = 15;
 
-  optional string casesensitivity = 16;
+  optional string vscan = 16;
 
-  optional string vscan = 17;
+  optional string nbmand = 17;
 
-  optional string nbmand = 18;
+  optional string guid = 18;
 
-  optional string guid = 19;
+  optional string primarycache = 19;
 
-  optional string primarycache = 20;
+  optional string secondarycache = 20;
 
-  optional string secondarycache = 21;
+  optional string deferDestroy = 21;
 
-  optional string deferDestroy = 22;
+  optional string userrefs = 22;
 
-  optional string userrefs = 23;
+  optional string mlslabel = 23;
 
-  optional string mlslabel = 24;
+  optional string refcompressratio = 24;
 
-  optional string refcompressratio = 25;
+  optional string written = 25;
 
-  optional string written = 26;
+  optional string logicalreferenced = 26;
 
-  optional string logicalreferenced = 27;
+  optional string acltype = 27;
 
-  optional string acltype = 28;
+  optional string context = 28;
 
-  optional string context = 29;
+  optional string fscontext = 29;
 
-  optional string fscontext = 30;
+  optional string defcontext = 30;
 
-  optional string defcontext = 31;
-
-  optional string rootcontext = 32;
+  optional string rootcontext = 31;
 }
 
 // Volume
@@ -324,84 +322,86 @@ message Snapshot {
 message Volume {
   optional string name = 1;
 
-  optional string type = 2;
+  optional string source = 2;
 
-  optional string creation = 3;
+  optional string type = 3;
 
-  optional string used = 4;
+  optional string creation = 4;
 
-  optional string available = 5;
+  optional string used = 5;
 
-  optional string referenced = 6;
+  optional string available = 6;
 
-  optional string compressratio = 7;
+  optional string referenced = 7;
 
-  optional string reservation = 8;
+  optional string compressratio = 8;
 
-  optional string volsize = 9;
+  optional string reservation = 9;
 
-  optional string volblocksize = 10;
+  optional string volsize = 10;
 
-  optional string checksum = 11;
+  optional string volblocksize = 11;
 
-  optional string compression = 12;
+  optional string checksum = 12;
 
-  optional string readonly = 13;
+  optional string compression = 13;
 
-  optional string copies = 14;
+  optional string readonly = 14;
 
-  optional string refreservation = 15;
+  optional string copies = 15;
 
-  optional string guid = 16;
+  optional string refreservation = 16;
 
-  optional string primarycache = 17;
+  optional string guid = 17;
 
-  optional string secondarycache = 18;
+  optional string primarycache = 18;
 
-  optional string usedbysnapshots = 19;
+  optional string secondarycache = 19;
 
-  optional string usedbydataset = 20;
+  optional string usedbysnapshots = 20;
 
-  optional string usedbychildren = 21;
+  optional string usedbydataset = 21;
 
-  optional string usedbyrefreservation = 22;
+  optional string usedbychildren = 22;
 
-  optional string logbias = 23;
+  optional string usedbyrefreservation = 23;
 
-  optional string dedup = 24;
+  optional string logbias = 24;
 
-  optional string mlslabel = 25;
+  optional string dedup = 25;
 
-  optional string sync = 26;
+  optional string mlslabel = 26;
 
-  optional string refcompressratio = 27;
+  optional string sync = 27;
 
-  optional string written = 28;
+  optional string refcompressratio = 28;
 
-  optional string logicalused = 29;
+  optional string written = 29;
 
-  optional string logicalreferenced = 30;
+  optional string logicalused = 30;
 
-  optional string volmode = 31;
+  optional string logicalreferenced = 31;
 
-  optional string filesystemLimit = 32;
+  optional string volmode = 32;
 
-  optional string snapshotLimit = 33;
+  optional string filesystemLimit = 33;
 
-  optional string snapshotCount = 34;
+  optional string snapshotLimit = 34;
 
-  optional string snapdev = 35;
+  optional string snapshotCount = 35;
 
-  optional string acltype = 36;
+  optional string snapdev = 36;
 
-  optional string context = 37;
+  optional string acltype = 37;
 
-  optional string fscontext = 38;
+  optional string context = 38;
 
-  optional string defcontext = 39;
+  optional string fscontext = 39;
 
-  optional string rootcontext = 40;
+  optional string defcontext = 40;
 
-  optional string redundantMetadata = 41;
+  optional string rootcontext = 41;
+
+  optional string redundantMetadata = 42;
 }
 
