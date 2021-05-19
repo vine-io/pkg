@@ -307,6 +307,11 @@ func (z *ZFSadm) CreateFileSystem(ctx context.Context, name string, properties m
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
 
+	execute = ZFSCtl(z.zfs).Set(name, properties)
+	if _, err := execute.Exec(); err != nil {
+		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
+	}
+
 	z.wrapFileSystem(ctx, name, fs)
 
 	return fs, nil
@@ -437,6 +442,11 @@ func (z *ZFSadm) CreateVolume(ctx context.Context, name string, properties map[s
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
 
+	execute = ZFSCtl(z.zfs).Set(name, properties)
+	if _, err := execute.Exec(); err != nil {
+		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
+	}
+
 	z.wrapVolume(ctx, name, vol)
 	return vol, nil
 }
@@ -528,6 +538,11 @@ func (z *ZFSadm) CreateSnapshot(ctx context.Context, parent, name string, proper
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
 
+	execute = ZFSCtl(z.zfs).Set(name, properties)
+	if _, err := execute.Exec(); err != nil {
+		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
+	}
+
 	z.wrapSnapshot(ctx, name, snapshot)
 	return snapshot, nil
 }
@@ -560,6 +575,11 @@ func (z *ZFSadm) CloneFileSystem(ctx context.Context, name, snap string, propert
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
 
+	execute = ZFSCtl(z.zfs).Set(name, properties)
+	if _, err := execute.Exec(); err != nil {
+		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
+	}
+
 	fileSystem := &Volume{Name: name, Source: snap}
 	z.wrapFileSystem(ctx, name, fileSystem)
 	return fileSystem, nil
@@ -577,6 +597,11 @@ func (z *ZFSadm) CloneVolume(ctx context.Context, name, snap string, properties 
 	pool := strings.SplitN(snap, "/", 2)[0]
 	name = path.Join(pool, name)
 	execute := ZFSCtl(z.zfs).Clone(name, nil, snap)
+	if _, err := execute.Exec(); err != nil {
+		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
+	}
+
+	execute = ZFSCtl(z.zfs).Set(name, properties)
 	if _, err := execute.Exec(); err != nil {
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
