@@ -149,7 +149,7 @@ func (m *Manager) OpenDev(handler, name, filename string) (*Device, string, erro
 	}
 
 	size := readHeader(filepath.Join(kernel, handler, name, "size"))
-	device.Size, _ = strconv.ParseInt(size, 10, 64)
+	device.Size_, _ = strconv.ParseInt(size, 10, 64)
 
 	m.Lock()
 	defer m.Unlock()
