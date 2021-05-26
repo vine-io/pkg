@@ -50,7 +50,6 @@ const (
 //		}
 // 	}
 // +gogo:deepcopy-gen=true
-// +gogo:genproto=true
 type Handler struct {
 	// the name of handler, example vdisk_blockio
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
@@ -65,14 +64,13 @@ type Handler struct {
 //			size 10737418240
 //	  }
 // +gogo:deepcopy-gen=true
-// +gogo:genproto=true
 type Device struct {
 	// the name of device
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	// the filename of device, the path of block file
 	Filename string `json:"filename" protobuf:"bytes,2,opt,name=filename"`
 	// the size of device (unit B)
-	Size_ int64 `json:"size" protobuf:"varint,3,opt,name=size"`
+	Size int64 `json:"size" protobuf:"varint,3,opt,name=size"`
 }
 
 // Driver scst
@@ -91,7 +89,6 @@ type Device struct {
 //		}
 //	}
 // +gogo:deepcopy-gen=true
-// +gogo:genproto=true
 type Driver struct {
 	// the name of Driver
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
@@ -113,7 +110,6 @@ type Driver struct {
 //		}
 //	}
 // +gogo:deepcopy-gen=true
-// +gogo:genproto=true
 type Target struct {
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 
@@ -133,7 +129,6 @@ type Target struct {
 //		INITIATOR iqn.1991-05.com.microsoft:win-1bp99fqu2ri
 //	}
 // +gogo:deepcopy-gen=true
-// +gogo:genproto=true
 type Group struct {
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 
@@ -144,7 +139,6 @@ type Group struct {
 
 // Lun scst logical unit
 // +gogo:deepcopy-gen=true
-// +gogo:genproto=true
 type Lun struct {
 	// the id of lun
 	Id int64 `json:"id" protobuf:"varint,1,opt,name=id"`
@@ -352,7 +346,7 @@ func FromCfgFile(cfg string) (*System, error) {
 				if len(parts) != 2 {
 					return nil, fmt.Errorf("%w: bad format '%s' at %s:%d", ErrSyntax, line, cfg, n)
 				}
-				system.Handlers[handlerPtr].Devices[devicePtr].Size_, _ = strconv.ParseInt(parts[1], 10, 64)
+				system.Handlers[handlerPtr].Devices[devicePtr].Size, _ = strconv.ParseInt(parts[1], 10, 64)
 			}
 		//case _CopyManager:
 		case _CopyTgt:
@@ -461,7 +455,7 @@ func FromKernel() (*System, error) {
 			device := &Device{Name: dev}
 			device.Filename = readHeader(filepath.Join(subRoot, dev, "filename"))
 			size := readHeader(filepath.Join(subRoot, dev, "size"))
-			device.Size_, _ = strconv.ParseInt(size, 10, 64)
+			device.Size, _ = strconv.ParseInt(size, 10, 64)
 
 			devices[dev] = device
 		}

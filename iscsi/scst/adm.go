@@ -174,3 +174,7 @@ func (s *Scstcmd) DeleteDisk(ctx context.Context, name string) error {
 	}
 	return nil
 }
+
+func (s *Scstcmd) RawScst() *adm {
+	return NewCtl(s.scst)
+}
