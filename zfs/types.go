@@ -15,11 +15,10 @@ package zfs
 
 // Pool
 // +gogo:deepcopy-gen=true
-// +gogo:genproto=true
 type Pool struct {
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	// zfs pool 容量
-	Size_ string `json:"size" zfs:"size" protobuf:"bytes,2,opt,name=size"`
+	Size string `json:"size" zfs:"size" protobuf:"bytes,2,opt,name=size"`
 
 	Capacity string `json:"capacity" zfs:"capacity" protobuf:"bytes,3,opt,name=capacity"`
 
@@ -243,7 +242,6 @@ type Pool struct {
 
 // Volume
 // +gogo:deepcopy-gen=true
-// +gogo:genproto=true
 type Volume struct {
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 
@@ -332,7 +330,6 @@ type Volume struct {
 
 // Snapshot
 // +gogo:deepcopy-gen=true
-// +gogo:genproto=true
 type Snapshot struct {
 	Parent string `json:"parent" protobuf:"bytes,1,opt,name=parent"`
 

@@ -120,6 +120,15 @@ func (z *ZFSadm) GetPoolIO(ctx context.Context, name string) (string, string, st
 	return readIO, writeIO, read, write, nil
 }
 
+func (z *ZFSadm) ImportPool(ctx context.Context, name string) error {
+	execute := z.RawZPool().Import5(name, "", nil, "", "", false, false, false, "", false, false, "")
+	_, err := execute.Exec()
+	if err != nil {
+		return fmt.Errorf("%s: %v", execute.Commit(), err)
+	}
+	return nil
+}
+
 func (z *ZFSadm) CreatePool(ctx context.Context, name, compression, raid string, quota float64, devices []string) (*Pool, error) {
 
 	if pool, _ := z.getPool(ctx, name); pool != nil {
@@ -135,7 +144,7 @@ func (z *ZFSadm) CreatePool(ctx context.Context, name, compression, raid string,
 
 	z.wrapPool(ctx, name, pool)
 
-	poolSize, _ := strconv.ParseFloat(pool.Size_, 64)
+	poolSize, _ := strconv.ParseFloat(pool.Size, 64)
 	_quota := int64(poolSize * quota / 100)
 	properties := map[string]string{
 		"compression": compression,
@@ -175,7 +184,7 @@ func (z *ZFSadm) SetPoolQuota(ctx context.Context, name string, quota float64) (
 		return nil, err
 	}
 
-	poolSize, _ := strconv.ParseFloat(pool.Size_, 64)
+	poolSize, _ := strconv.ParseFloat(pool.Size, 64)
 	_quota := int64(poolSize * quota / 100)
 	properties := map[string]string{
 		"quota": strconv.FormatInt(_quota, 10),
@@ -638,6 +647,14 @@ func (z *ZFSadm) Get(ctx context.Context, name, options, max string, out []strin
 	return execute.Exec()
 }
 
+func (z *ZFSadm) RawZFS() *zfsctl {
+	return ZFSCtl(z.zfs)
+}
+
+func (z *ZFSadm) RawZPool() *zpoolctl {
+	return ZPoolCtl(z.zpool)
+}
+
 func setSnapshot(data []byte, into *Snapshot) {
 	reader := bytes.NewReader(data)
 	rd := bufio.NewReader(reader)
@@ -658,18 +675,4 @@ func setSnapshot(data []byte, into *Snapshot) {
 			return
 		}
 	}
-}
-
-// 从 <pool>/<name>@<snapshot> 中提取 <pool>/<name>
-func getName(line string) string {
-	i := strings.LastIndex(line, "@")
-	if i <= 0 {
-		i = len(line)
-	}
-	return line[:i]
-}
-
-// 从 <pool>/<name> 中提取 name
-func getPoolName(text string) string {
-	return strings.SplitN(text, "/", 2)[0]
 }
