@@ -25,6 +25,7 @@ package scst
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -64,6 +65,8 @@ func (s *Scstcmd) lazy() {
 			return
 		}
 		s.scst = strings.TrimSuffix(string(data), "\n")
+
+		_ = ioutil.WriteFile("/sys/kernel/scst_tgt/targets/iscsi/enabled", []byte("1"), 0644)
 	})
 }
 
