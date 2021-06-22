@@ -113,7 +113,10 @@ func (s *Scstcmd) CreateLun(ctx context.Context, lun, target, driver, group, dev
 
 func (s *Scstcmd) AddInit(ctx context.Context, iqn, target, driver, group string) error {
 	scst := NewCtl(s.scst).AddInit(iqn).Target(target).
-		Driver(driver).Group(group)
+		Driver(driver)
+	if group != "" {
+		scst = scst.Group(group)
+	}
 	if _, err := scst.Execute(); err != nil {
 		return fmt.Errorf("%s: %v", scst.Commit(), err)
 	}
@@ -153,7 +156,12 @@ func (s *Scstcmd) DeleteTarget(ctx context.Context, target, driver string) error
 }
 
 func (s *Scstcmd) DeleteInit(ctx context.Context, init, target, group, driver string) error {
-	scst := NewCtl(s.scst).RemoveInit(init).Target(target).Group(group).Driver(driver).Force()
+	scst := NewCtl(s.scst).RemoveInit(init).Target(target)
+	if group != "" {
+		scst = scst.Group(group)
+	}
+
+	scst = scst.Driver(driver).Force()
 	if _, err := scst.Execute(); err != nil {
 		return fmt.Errorf("%s: %v", scst.Commit(), err)
 	}
