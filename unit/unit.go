@@ -22,7 +22,9 @@
 
 package unit
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	convS = 1024
