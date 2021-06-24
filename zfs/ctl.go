@@ -15,6 +15,7 @@ package zfs
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -31,7 +32,7 @@ func ZFSCtl(cmd string) *zfsctl {
 
 // CreateFileSystem creates zfs filesystem
 // 	zfs create [-p] [-o property=value] ... <filesystem>
-func (z *zfsctl) CreateFileSystem(name string, properties map[string]string) *execute {
+func (z *zfsctl) CreateFileSystem(ctx context.Context, name string, properties map[string]string) *execute {
 	args := []string{"create", "-p"}
 	if properties != nil {
 		kv := "-o "
@@ -41,12 +42,12 @@ func (z *zfsctl) CreateFileSystem(name string, properties map[string]string) *ex
 		args = append(args, kv)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // CreateVolume creates zfs block volume
 // 	zfs create [-ps] [-b blocksize] [-o property=value] ... -V <size> <volume>
-func (z *zfsctl) CreateVolume(name string, block int64, properties map[string]string, size string) *execute {
+func (z *zfsctl) CreateVolume(ctx context.Context, name string, block int64, properties map[string]string, size string) *execute {
 	args := []string{"create", "-ps"}
 	if block > 0 {
 		args = append(args, fmt.Sprintf("-b %d", block))
@@ -59,41 +60,41 @@ func (z *zfsctl) CreateVolume(name string, block int64, properties map[string]st
 		args = append(args, kv)
 	}
 	args = append(args, "-V", size, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // DestroyFileSystemOrVolume destroy zfs filesystem or volume
 // 	zfs destroy [-fnpRrv] <filesystem|volume>
-func (z *zfsctl) DestroyFileSystemOrVolume(name, options string) *execute {
+func (z *zfsctl) DestroyFileSystemOrVolume(ctx context.Context, name, options string) *execute {
 	args := []string{"destroy"}
 	if len(options) > 0 {
 		args = append(args, options)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // DestroySnapshot destroy zfs snapshot
 // 	zfs destroy [-dnpRrv] <filesystem|volume>@<snap>[%<snap>][,...]
-func (z *zfsctl) DestroySnapshot(name, options string) *execute {
+func (z *zfsctl) DestroySnapshot(ctx context.Context, name, options string) *execute {
 	args := []string{"destroy"}
 	if len(options) > 0 {
 		args = append(args, options)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // DestroyBookmark destroy zfs bookmark that belongs to filesystem or volume
 // 	zfs destroy <filesystem|volume>#<bookmark>
-func (z *zfsctl) DestroyBookmark(name string) *execute {
+func (z *zfsctl) DestroyBookmark(ctx context.Context, name string) *execute {
 	args := []string{"destroy", name}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Snapshot create snapshot that belongs to volume or filesystem
 // 	zfs snapshot|snap [-r] [-o property=value] ... <filesystem|volume>@<snap> ...
-func (z *zfsctl) Snapshot(name string, properties map[string]string) *execute {
+func (z *zfsctl) Snapshot(ctx context.Context, name string, properties map[string]string) *execute {
 	args := []string{"snapshot", "-r"}
 	if properties != nil {
 		kv := "-o "
@@ -103,23 +104,23 @@ func (z *zfsctl) Snapshot(name string, properties map[string]string) *execute {
 		args = append(args, kv)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Rollback uses old data from snapshot
 // 	zfs rollback [-rRf] <snapshot>
-func (z *zfsctl) Rollback(options string, snap string) *execute {
+func (z *zfsctl) Rollback(ctx context.Context, options string, snap string) *execute {
 	args := []string{"rollback"}
 	if len(options) > 0 {
 		args = append(args, options)
 	}
 	args = append(args, snap)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Clone creates a volume or filesystem from snapshot
 // 	zfs clone [-p] [-o property=value] ... <snapshot> <filesystem|volume>
-func (z *zfsctl) Clone(name string, properties map[string]string, source string) *execute {
+func (z *zfsctl) Clone(ctx context.Context, name string, properties map[string]string, source string) *execute {
 	args := []string{"clone", "-p"}
 	if properties != nil {
 		kv := "-o "
@@ -129,58 +130,58 @@ func (z *zfsctl) Clone(name string, properties map[string]string, source string)
 		args = append(args, kv)
 	}
 	args = append(args, source, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Promote
 // 	zfs promote <clone-filesystem>
-func (z *zfsctl) Promote(name string) *execute {
+func (z *zfsctl) Promote(ctx context.Context, name string) *execute {
 	args := []string{"promote", name}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Rename renames volume, filesystem or snapshot
 // 	zfs rename [-f] <filesystem|volume|snapshot> <filesystem|volume|snapshot>
-func (z *zfsctl) Rename(name, newName string, force bool) *execute {
+func (z *zfsctl) Rename(ctx context.Context, name, newName string, force bool) *execute {
 	args := []string{"rename"}
 	if force {
 		args = append(args, "-f")
 	}
 	args = append(args, name, newName)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // RenameFileSystemOrVolume renames volume or filesystem
 // 	zfs rename [-f] -p <filesystem|volume> <filesystem|volume>
-func (z *zfsctl) RenameFileSystemOrVolume(name, newName string, force bool) *execute {
+func (z *zfsctl) RenameFileSystemOrVolume(ctx context.Context, name, newName string, force bool) *execute {
 	args := []string{"rename"}
 	if force {
 		args = append(args, "-f")
 	}
 	args = append(args, "-p")
 	args = append(args, name, newName)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // RenameSnapshot renames snapshot:
 // 	zfs rename -r <snapshot> <snapshot>
-func (z *zfsctl) RenameSnapshot(name, newName string) *execute {
+func (z *zfsctl) RenameSnapshot(ctx context.Context, name, newName string) *execute {
 	args := []string{"rename", "-r"}
 	args = append(args, name, newName)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Bookmark setup bookmark for snapshot:
 // 	zfs bookmark <snapshot> <bookmark>
-func (z *zfsctl) Bookmark(snapshot, bookmark string) *execute {
+func (z *zfsctl) Bookmark(ctx context.Context, snapshot, bookmark string) *execute {
 	args := []string{"bookmark", snapshot, bookmark}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // List get all datasets:
 // 	zfs list [-Hp] [-r|-d max] [-o property[,...]] [-s property]...
 //            [-S property]... [-t type[,...]] [filesystem|volume|snapshot] ...
-func (z *zfsctl) List(name, options, max string, oProperties []string, sProperty, SProperty, t string) *execute {
+func (z *zfsctl) List(ctx context.Context, name, options, max string, oProperties []string, sProperty, SProperty, t string) *execute {
 	args := []string{"list"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -207,12 +208,12 @@ func (z *zfsctl) List(name, options, max string, oProperties []string, sProperty
 	if len(name) > 0 {
 		args = append(args, name)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Set setup dataset property:
 // 	zfs set <property=value> ... <filesystem|volume|snapshot> ...
-func (z *zfsctl) Set(name string, properties map[string]string) *execute {
+func (z *zfsctl) Set(ctx context.Context, name string, properties map[string]string) *execute {
 	args := []string{"set"}
 	if properties != nil {
 		kv := ""
@@ -222,14 +223,14 @@ func (z *zfsctl) Set(name string, properties map[string]string) *execute {
 		args = append(args, kv)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Get gets dataset's property:
 // 	zfs get [-rHp] [-d max] [-o "all" | field[,...]]
 //            [-t type[,...]] [-s source[,...]]
 //            <"all" | property[,...]> [filesystem|volume|snapshot|bookmark] ...
-func (z *zfsctl) Get(name, options, max string, out []string, t, s string, properties ...string) *execute {
+func (z *zfsctl) Get(ctx context.Context, name, options, max string, out []string, t, s string, properties ...string) *execute {
 	args := []string{"get"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -259,33 +260,33 @@ func (z *zfsctl) Get(name, options, max string, out []string, t, s string, prope
 		args = append(args, o)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Inherit :
 // 	zfs inherit [-rS] <property> <filesystem|volume|snapshot> ...
-func (z *zfsctl) Inherit(name string, options string, property string) *execute {
+func (z *zfsctl) Inherit(ctx context.Context, name string, options string, property string) *execute {
 	args := []string{"inherit"}
 	if len(options) != 0 {
 		args = append(args, options)
 	}
 	args = append(args, property, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Upgrade zfs upgrade
 // 	zfs upgrade [-v]
-func (z *zfsctl) Upgrade(v bool) *execute {
+func (z *zfsctl) Upgrade(ctx context.Context, v bool) *execute {
 	args := []string{"upgrade"}
 	if v {
 		args = append(args, "-v")
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // UpgradeFileSystem
 // 	zfs upgrade [-r] [-V version] <-a | filesystem ...>
-func (z *zfsctl) UpgradeFileSystem(name, version string, r, all bool) *execute {
+func (z *zfsctl) UpgradeFileSystem(ctx context.Context, name, version string, r, all bool) *execute {
 	args := []string{"upgrade"}
 	if r {
 		args = append(args, "-r")
@@ -298,13 +299,13 @@ func (z *zfsctl) UpgradeFileSystem(name, version string, r, all bool) *execute {
 	} else {
 		args = append(args, name)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Userspace
 // 	zfs userspace [-Hinp] [-o field[,...]] [-s field] ...
 //            [-S field] ... [-t type[,...]] <filesystem|snapshot>
-func (z *zfsctl) Userspace(name, options string, fields []string, sField, SField, t string) *execute {
+func (z *zfsctl) Userspace(ctx context.Context, name, options string, fields []string, sField, SField, t string) *execute {
 	args := []string{"userspace"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -326,13 +327,13 @@ func (z *zfsctl) Userspace(name, options string, fields []string, sField, SField
 		args = append(args, "-t "+t)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // GroupSpace
 // 	zfs groupspace [-Hinp] [-o field[,...]] [-s field] ...
 //            [-S field] ... [-t type[,...]] <filesystem|snapshot>
-func (z *zfsctl) GroupSpace(name, options string, fields []string, sField, SField, t string) *execute {
+func (z *zfsctl) GroupSpace(ctx context.Context, name, options string, fields []string, sField, SField, t string) *execute {
 	args := []string{"groupspace"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -355,19 +356,19 @@ func (z *zfsctl) GroupSpace(name, options string, fields []string, sField, SFiel
 		args = append(args, "-t "+t)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Mount mounts all endpoint
 // 	zfs mount
-func (z *zfsctl) Mount() *execute {
+func (z *zfsctl) Mount(ctx context.Context) *execute {
 	args := []string{"mount"}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // MountFileSystem
 // 	zfs mount [-vO] [-o opts] <-a | filesystem>
-func (z *zfsctl) MountFileSystem(name, options, opts string, all bool) *execute {
+func (z *zfsctl) MountFileSystem(ctx context.Context, name, options, opts string, all bool) *execute {
 	args := []string{"mount"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -380,12 +381,12 @@ func (z *zfsctl) MountFileSystem(name, options, opts string, all bool) *execute 
 	} else {
 		args = append(args, name)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Umount
 // 	zfs unmount [-f] <-a | filesystem|mountpoint>
-func (z *zfsctl) Umount(name string, force, all bool) *execute {
+func (z *zfsctl) Umount(ctx context.Context, name string, force, all bool) *execute {
 	args := []string{"umount"}
 	if force {
 		args = append(args, "-f")
@@ -395,12 +396,12 @@ func (z *zfsctl) Umount(name string, force, all bool) *execute {
 	} else {
 		args = append(args, name)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Share
 // 	zfs share <-a [nfs|smb] | filesystem>
-func (z *zfsctl) Share(name string, all bool, kind string) *execute {
+func (z *zfsctl) Share(ctx context.Context, name string, all bool, kind string) *execute {
 	args := []string{"share"}
 	if all {
 		args = append(args, "-a")
@@ -410,12 +411,12 @@ func (z *zfsctl) Share(name string, all bool, kind string) *execute {
 	} else {
 		args = append(args, name)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Unshare
 // 	zfs unshare <-a [nfs|smb] | filesystem|mountpoint>
-func (z *zfsctl) Unshare(name string, all bool, kind string) *execute {
+func (z *zfsctl) Unshare(ctx context.Context, name string, all bool, kind string) *execute {
 	args := []string{"unshare"}
 	if all {
 		args = append(args, "-a")
@@ -425,12 +426,12 @@ func (z *zfsctl) Unshare(name string, all bool, kind string) *execute {
 	} else {
 		args = append(args, name)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // SendSnapshot Examples:
 // 	zfs send [-DnPpRvLec] [-[i|I] snapshot] <snapshot>
-func (z *zfsctl) SendSnapshot(name, options string, i string) *execute {
+func (z *zfsctl) SendSnapshot(ctx context.Context, name, options string, i string) *execute {
 	args := []string{"send"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -439,36 +440,36 @@ func (z *zfsctl) SendSnapshot(name, options string, i string) *execute {
 		args = append(args, "-i "+i)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // SendAndRecv Examples:
 // 	zfs send tank/sla@snap | ssh storage@192.168.2.120 -i test "sudo /usr/sbin/zfs receive -Fu dup/sla@snap"
-func (z *zfsctl) SendAndRecv(source, target, user, host string) *execute {
+func (z *zfsctl) SendAndRecv(ctx context.Context, source, target, user, host string) *execute {
 	args := []string{"send", source}
 	if len(user) != 0 && len(host) != 0 {
 		args = append(args, fmt.Sprintf(`| ssh %s@%s -i %s "sudo %s receive -Fu %s"`, user, host, user, z.cmd, target))
 	} else {
 		args = append(args, fmt.Sprintf(`| %s receive -Fu %s`, z.cmd, target))
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // IncrementSendAndRecv Examples:
 // 	zfs send -i tank/sla@snap1 tank/sla@snap2 | ssh storage@192.168.2.120 -i test "sudo /usr/sbin/zfs receive -Fu dup/sla@snap2"
-func (z *zfsctl) IncrementSendAndRecv(source, lastSnapshot, target, user, host string) *execute {
+func (z *zfsctl) IncrementSendAndRecv(ctx context.Context, source, lastSnapshot, target, user, host string) *execute {
 	args := []string{"send", "-i", lastSnapshot, source}
 	if len(user) != 0 && len(host) != 0 {
 		args = append(args, fmt.Sprintf(`| ssh %s@%s -i %s "sudo %s receive -Fu %s"`, user, host, user, z.cmd, target))
 	} else {
 		args = append(args, fmt.Sprintf(`| %s receive -Fu %s`, z.cmd, target))
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Send Examples:
 // 	zfs send [-Lec] [-i snapshot|bookmark] <filesystem|volume|snapshot>
-func (z *zfsctl) Send(name, options string, i string) *execute {
+func (z *zfsctl) Send(ctx context.Context, name, options string, i string) *execute {
 	args := []string{"send"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -477,24 +478,24 @@ func (z *zfsctl) Send(name, options string, i string) *execute {
 		args = append(args, "-i "+i)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // SendToken Examples:
 // 	zfs send [-nvPe] -t <receive_resume_token>
-func (z *zfsctl) SendToken(name, options string) *execute {
+func (z *zfsctl) SendToken(ctx context.Context, name, options string) *execute {
 	args := []string{"send"}
 	if len(options) > 0 {
 		args = append(args, options)
 	}
 	args = append(args, "-t", name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Receive Examples:
 // 	zfs receive [-vnsFu] [-o <property>=<value>] ... [-x <property>] ...
 //            <filesystem|volume|snapshot>
-func (z *zfsctl) Receive(name, options string, properties map[string]string, xProperty string) *execute {
+func (z *zfsctl) Receive(ctx context.Context, name, options string, properties map[string]string, xProperty string) *execute {
 	args := []string{"receive"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -510,13 +511,13 @@ func (z *zfsctl) Receive(name, options string, properties map[string]string, xPr
 		args = append(args, "-x "+xProperty)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // ReceiveFileSystem Examples:
 // 	zfs receive [-vnsFu] [-o <property>=<value>] ... [-x <property>] ...
 //            <filesystem|volume|snapshot>
-func (z *zfsctl) ReceiveFileSystem(name, options string, properties map[string]string, xProperty string, de string) *execute {
+func (z *zfsctl) ReceiveFileSystem(ctx context.Context, name, options string, properties map[string]string, xProperty string, de string) *execute {
 	args := []string{"receive"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -538,141 +539,141 @@ func (z *zfsctl) ReceiveFileSystem(name, options string, properties map[string]s
 		args = append(args, "-e")
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // ReceiveAll Examples:
 // 	zfs receive -A <filesystem|volume>
-func (z *zfsctl) ReceiveAll(name string) *execute {
+func (z *zfsctl) ReceiveAll(ctx context.Context, name string) *execute {
 	args := []string{"receive", "-A", name}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Allow1 Examples:
 // 	zfs allow <filesystem|volume>
-func (z *zfsctl) Allow1(name string) *execute {
+func (z *zfsctl) Allow1(ctx context.Context, name string) *execute {
 	args := []string{"allow", name}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Allow2 Examples:
 // 	zfs allow [-ldug] <"everyone"|user|group>[,...] <perm|@setname>[,...]
 //            <filesystem|volume>
-func (z *zfsctl) Allow2(name, options, authority, perm string) *execute {
+func (z *zfsctl) Allow2(ctx context.Context, name, options, authority, perm string) *execute {
 	args := []string{"allow"}
 	if len(options) > 0 {
 		args = append(args, options)
 	}
 	args = append(args, authority, perm, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Allow3 Examples:
 // 	zfs allow [-ld] -e <perm|@setname>[,...] <filesystem|volume>
-func (z *zfsctl) Allow3(name, options, perm string) *execute {
+func (z *zfsctl) Allow3(ctx context.Context, name, options, perm string) *execute {
 	args := []string{"allow"}
 	if len(options) > 0 {
 		args = append(args, options)
 	}
 	args = append(args, perm, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Allow4 Examples:
 // 	zfs allow -c <perm|@setname>[,...] <filesystem|volume>
-func (z *zfsctl) Allow4(name, perm string) *execute {
+func (z *zfsctl) Allow4(ctx context.Context, name, perm string) *execute {
 	args := []string{"allow", "-c", perm, name}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Allow5 Examples:
 // 	zfs allow -s @setname <perm|@setname>[,...] <filesystem|volume>
-func (z *zfsctl) Allow5(name, setname, perm string) *execute {
+func (z *zfsctl) Allow5(ctx context.Context, name, setname, perm string) *execute {
 	args := []string{"allow", "-s", setname, perm, name}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Unallow1 Examples:
 // 	zfs unallow [-rldug] <"everyone"|user|group>[,...]
 //            [<perm|@setname>[,...]] <filesystem|volume>
-func (z *zfsctl) Unallow1(name, options, authority, perm string) *execute {
+func (z *zfsctl) Unallow1(ctx context.Context, name, options, authority, perm string) *execute {
 	args := []string{"unallow"}
 	if len(options) > 0 {
 		args = append(args, options)
 	}
 	args = append(args, authority, perm, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Unallow2 Examples:
 // 	zfs unallow [-rld] -e [<perm|@setname>[,...]] <filesystem|volume>
-func (z *zfsctl) Unallow2(name, options, perm string) *execute {
+func (z *zfsctl) Unallow2(ctx context.Context, name, options, perm string) *execute {
 	args := []string{"unallow"}
 	if len(options) > 0 {
 		args = append(args, options)
 	}
 	args = append(args, perm, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Unallow3 Examples:
 // 	zfs unallow [-r] -c [<perm|@setname>[,...]] <filesystem|volume>
-func (z *zfsctl) Unallow3(name string, r bool, perm string) *execute {
+func (z *zfsctl) Unallow3(ctx context.Context, name string, r bool, perm string) *execute {
 	args := []string{"unallow"}
 	if r {
 		args = append(args, "-r")
 	}
 	args = append(args, "-c", perm, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Unallow4 Examples:
 // 	zfs unallow [-r] -s @setname [<perm|@setname>[,...]] <filesystem|volume>
-func (z *zfsctl) Unallow4(name string, r bool, setmame, perm string) *execute {
+func (z *zfsctl) Unallow4(ctx context.Context, name string, r bool, setmame, perm string) *execute {
 	args := []string{"unallow"}
 	if r {
 		args = append(args, "-r")
 	}
 	args = append(args, "-s", setmame, perm, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Hold Examples:
 // 	zfs hold [-r] <tag> <snapshot> ...
-func (z *zfsctl) Hold(name string, r bool, tag string) *execute {
+func (z *zfsctl) Hold(ctx context.Context, name string, r bool, tag string) *execute {
 	args := []string{"hold"}
 	if r {
 		args = append(args, "-r")
 	}
 	args = append(args, tag, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Holds Examples:
 // 	zfs holds [-r] <snapshot> ...
-func (z *zfsctl) Holds(name string, r bool) *execute {
+func (z *zfsctl) Holds(ctx context.Context, name string, r bool) *execute {
 	args := []string{"holds"}
 	if r {
 		args = append(args, "-r")
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Release Examples:
 // 	zfs  release [-r] <tag> <snapshot> ...
-func (z *zfsctl) Release(name string, r bool, tag string) *execute {
+func (z *zfsctl) Release(ctx context.Context, name string, r bool, tag string) *execute {
 	args := []string{"release"}
 	if r {
 		args = append(args, "-r")
 	}
 	args = append(args, tag, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Diff Examples:
 // 	zfs diff [-FHt] <snapshot> [snapshot|filesystem]
-func (z *zfsctl) Diff(name, options string, target string) *execute {
+func (z *zfsctl) Diff(ctx context.Context, name, options string, target string) *execute {
 	args := []string{"diff"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -681,7 +682,7 @@ func (z *zfsctl) Diff(name, options string, target string) *execute {
 	if len(target) > 0 {
 		args = append(args, target)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 type zpoolctl struct {
@@ -698,7 +699,7 @@ func ZPoolCtl(cmd string) *zpoolctl {
 // 	zpool create [-fnd] [-o property=value] ...
 //            [-O file-system-property=value] ...
 //            [-m mountpoint] [-R root] <pool> <vdev>
-func (z *zpoolctl) Create(name, options, point, root string, properties map[string]string, raid string, devs ...string) *execute {
+func (z *zpoolctl) Create(ctx context.Context, name, options, point, root string, properties map[string]string, raid string, devs ...string) *execute {
 	args := []string{"create"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -721,24 +722,24 @@ func (z *zpoolctl) Create(name, options, point, root string, properties map[stri
 		args = append(args, dev)
 	}
 
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Destroy delete a pool
 // Examples:
 // 	zpool destroy [-f] <pool>
-func (z *zpoolctl) Destroy(name string, force bool) *execute {
+func (z *zpoolctl) Destroy(ctx context.Context, name string, force bool) *execute {
 	args := []string{"destroy"}
 	if force {
 		args = append(args, "-f")
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Add Examples:
 //	zpool add [-fgLnP] [-o property=value] <pool> <vdev>
-func (z *zpoolctl) Add(name string, options string, devs ...string) *execute {
+func (z *zpoolctl) Add(ctx context.Context, name string, options string, devs ...string) *execute {
 	args := []string{"add"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -747,32 +748,32 @@ func (z *zpoolctl) Add(name string, options string, devs ...string) *execute {
 	for _, dev := range devs {
 		args = append(args, dev)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Remove Examples:
 //	zpool remove <pool> <device>
-func (z *zpoolctl) Remove(name string, devs ...string) *execute {
+func (z *zpoolctl) Remove(ctx context.Context, name string, devs ...string) *execute {
 	args := []string{"remove", name}
 	for _, dev := range devs {
 		args = append(args, dev)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // LabelClear Examples:
 //	zpool labelclear [-f] <vdev>
-func (z *zpoolctl) LabelClear(device string, force bool) *execute {
+func (z *zpoolctl) LabelClear(ctx context.Context, device string, force bool) *execute {
 	args := []string{"labelclear"}
 	if force {
 		args = append(args, "-f", device)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // List Examples:
 //	zpool list [-gHLpPv] [-o property[,...]] [-T d|u] [pool]
-func (z *zpoolctl) List(name, options string, properties []string, t string) *execute {
+func (z *zpoolctl) List(ctx context.Context, name, options string, properties []string, t string) *execute {
 	args := []string{"list"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -789,13 +790,13 @@ func (z *zpoolctl) List(name, options string, properties []string, t string) *ex
 		args = append(args, "-T "+t)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Iostat Examples:
 // 	zpool iostat [[[-c [script1,script2,...][-lq]]|[-rw]] [-T d | u] [-ghHLpPvy]
 //            [[pool ...]|[pool vdev ...]|[vdev ...]] [interval [count]]
-func (z *zpoolctl) Iostat(name, scripts, t, options string, devs ...string) *execute {
+func (z *zpoolctl) Iostat(ctx context.Context, name, scripts, t, options string, devs ...string) *execute {
 	args := []string{"iostat"}
 	if len(scripts) > 0 {
 		args = append(args, scripts)
@@ -810,12 +811,12 @@ func (z *zpoolctl) Iostat(name, scripts, t, options string, devs ...string) *exe
 	for _, dev := range devs {
 		args = append(args, dev)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Status Examples:
 // 	zpool status [-c [script1,script2,...]] [-gLPvxD][-T d|u] [pool] ... [interval [count]]
-func (z *zpoolctl) Status(scripts, options, t string, name string) *execute {
+func (z *zpoolctl) Status(ctx context.Context, scripts, options, t string, name string) *execute {
 	args := []string{"status"}
 	if len(scripts) > 0 {
 		args = append(args, scripts)
@@ -827,23 +828,23 @@ func (z *zpoolctl) Status(scripts, options, t string, name string) *execute {
 		args = append(args, options)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Online Examples:
 //	zpool online <pool> <device> ...
-func (z *zpoolctl) Online(name string, devs ...string) *execute {
+func (z *zpoolctl) Online(ctx context.Context, name string, devs ...string) *execute {
 	args := []string{"online"}
 	args = append(args, name)
 	for _, dev := range devs {
 		args = append(args, dev)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Offline Examples:
 //	zpool offline [-f] [-t] <pool> <device> ...
-func (z *zpoolctl) Offline(name string, force, t bool, devs ...string) *execute {
+func (z *zpoolctl) Offline(ctx context.Context, name string, force, t bool, devs ...string) *execute {
 	args := []string{"offline"}
 	args = append(args, name)
 	if force {
@@ -855,30 +856,30 @@ func (z *zpoolctl) Offline(name string, force, t bool, devs ...string) *execute 
 	for _, dev := range devs {
 		args = append(args, dev)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Clear Examples:
 //	zpool clear [-nF] <pool> [device]
-func (z *zpoolctl) Clear(name, options string, devs ...string) *execute {
+func (z *zpoolctl) Clear(ctx context.Context, name, options string, devs ...string) *execute {
 	args := []string{"clear"}
 	args = append(args, options, name)
 	for _, dev := range devs {
 		args = append(args, dev)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Reopen Examples:
 //	zpool reopen <pool>
-func (z *zpoolctl) Reopen(name string) *execute {
+func (z *zpoolctl) Reopen(ctx context.Context, name string) *execute {
 	args := []string{"reopen", name}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Attach Examples:
 //	zpool attach [-f] [-o property=value] <pool> <device> <new-device>
-func (z *zpoolctl) Attach(name string, force bool, properties map[string]string, dev, newDev string) *execute {
+func (z *zpoolctl) Attach(ctx context.Context, name string, force bool, properties map[string]string, dev, newDev string) *execute {
 	args := []string{"attach"}
 	if force {
 		args = append(args, "-f")
@@ -892,19 +893,19 @@ func (z *zpoolctl) Attach(name string, force bool, properties map[string]string,
 		args = append(args, kv)
 	}
 	args = append(args, name, dev, newDev)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Detach Examples:
 //	zpool detach <pool> <device>
-func (z *zpoolctl) Detach(name, dev string) *execute {
+func (z *zpoolctl) Detach(ctx context.Context, name, dev string) *execute {
 	args := []string{"attach", name, dev}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Replace Examples:
 //	zpool replace [-f] [-o property=value] <pool> <device> [new-device]
-func (z *zpoolctl) Replace(name string, force bool, properties map[string]string, dev string, newDev string) *execute {
+func (z *zpoolctl) Replace(ctx context.Context, name string, force bool, properties map[string]string, dev string, newDev string) *execute {
 	args := []string{"replace"}
 	if force {
 		args = append(args, "-f")
@@ -921,13 +922,13 @@ func (z *zpoolctl) Replace(name string, force bool, properties map[string]string
 	if len(newDev) > 0 {
 		args = append(args, newDev)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Split Examples:
 //	zpool split [-gLnP] [-R altroot] [-o mntopts]
 //            [-o property=value] <pool> <newpool> [<device> ...]
-func (z *zpoolctl) Split(name, options, altRoot, mntopts string, properties map[string]string, newName string, devs ...string) *execute {
+func (z *zpoolctl) Split(ctx context.Context, name, options, altRoot, mntopts string, properties map[string]string, newName string, devs ...string) *execute {
 	args := []string{"split"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -950,23 +951,23 @@ func (z *zpoolctl) Split(name, options, altRoot, mntopts string, properties map[
 	for _, dev := range devs {
 		args = append(args, dev)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Examples:
 //	zpool scrub [-s | -p] <pool> ...
-func (z *zpoolctl) scrub(name, option string) *execute {
+func (z *zpoolctl) scrub(ctx context.Context, name, option string) *execute {
 	args := []string{"scrub"}
 	if len(option) > 0 {
 		args = append(args, option)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Import1 Examples:
 //	zpool import [-d dir] [-D]
-func (z *zpoolctl) Import1(dir string, d bool) *execute {
+func (z *zpoolctl) Import1(ctx context.Context, dir string, d bool) *execute {
 	args := []string{"import"}
 	if len(dir) > 0 {
 		args = append(args, dir)
@@ -974,12 +975,12 @@ func (z *zpoolctl) Import1(dir string, d bool) *execute {
 	if d {
 		args = append(args, "-D")
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Import2 Examples:
 //	zpool import [-d dir] [-D]
-func (z *zpoolctl) Import2(dir string, d bool) *execute {
+func (z *zpoolctl) Import2(ctx context.Context, dir string, d bool) *execute {
 	args := []string{"import"}
 	if len(dir) > 0 {
 		args = append(args, dir)
@@ -987,12 +988,12 @@ func (z *zpoolctl) Import2(dir string, d bool) *execute {
 	if d {
 		args = append(args, "-D")
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Import3 Examples:
 //	zpool import [-d dir | -c cachefile] [-F [-n]] <pool | id>
-func (z *zpoolctl) Import3(name, dir, file string, force, n bool) *execute {
+func (z *zpoolctl) Import3(ctx context.Context, name, dir, file string, force, n bool) *execute {
 	args := []string{"import"}
 	switch {
 	case len(dir) > 0:
@@ -1006,13 +1007,14 @@ func (z *zpoolctl) Import3(name, dir, file string, force, n bool) *execute {
 			args = append(args, "-n")
 		}
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Import4 Examples:
 //	zpool import [-o mntopts] [-o property=value] ...
 //            [-d dir | -c cachefile] [-D] [-f] [-m] [-N] [-R root] [-F [-n]] -a
 func (z *zpoolctl) Import4(
+	ctx context.Context,
 	mntopts string, properties map[string]string,
 	dir, file string, d, m, N bool, root string, force, n bool) *execute {
 	args := []string{"import"}
@@ -1052,7 +1054,7 @@ func (z *zpoolctl) Import4(
 		}
 	}
 	args = append(args, "-a")
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Import5 Examples:
@@ -1060,6 +1062,7 @@ func (z *zpoolctl) Import4(
 //            [-d dir | -c cachefile] [-D] [-f] [-m] [-N] [-R root] [-F [-n]]
 //            <pool | id> [newpool]
 func (z *zpoolctl) Import5(
+	ctx context.Context,
 	name, mntopts string, properties map[string]string,
 	dir, file string, d, m, N bool, root string, force, n bool, newPool string) *execute {
 	args := []string{"import"}
@@ -1102,51 +1105,51 @@ func (z *zpoolctl) Import5(
 	if len(newPool) > 0 {
 		args = append(args, newPool)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Export Examples:
 //	zpool zpoexport [-af] <pool> ...
-func (z *zpoolctl) Export(name string, options string) *execute {
+func (z *zpoolctl) Export(ctx context.Context, name string, options string) *execute {
 	args := []string{"export"}
 	if len(options) > 0 {
 		args = append(args, options)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Upgrade1 Examples:
 //	zpool upgrade [-v]
-func (z *zpoolctl) Upgrade1(v bool) *execute {
+func (z *zpoolctl) Upgrade1(ctx context.Context, v bool) *execute {
 	args := []string{"upgrade"}
 	if v {
 		args = append(args, "-v")
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Upgrade2 Examples:
 //	zpool upgrade [-V version] <-a | pool ...>
-func (z *zpoolctl) Upgrade2(name, version string) *execute {
+func (z *zpoolctl) Upgrade2(ctx context.Context, name, version string) *execute {
 	args := []string{"upgrade"}
 	if len(version) > 0 {
 		args = append(args, "-V "+version)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Reguid Examples:
 //	zpool reguid <pool>
-func (z *zpoolctl) Reguid(name string) *execute {
+func (z *zpoolctl) Reguid(ctx context.Context, name string) *execute {
 	args := []string{"reguid", name}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // History Examples:
 //	zpool history [-il] [<pool>]
-func (z *zpoolctl) History(options string, pool string) *execute {
+func (z *zpoolctl) History(ctx context.Context, options string, pool string) *execute {
 	args := []string{"history"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -1154,22 +1157,22 @@ func (z *zpoolctl) History(options string, pool string) *execute {
 	if len(pool) > 0 {
 		args = append(args, pool)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Event Examples:
 //	zpool events [-vHfc]
-func (z *zpoolctl) Event(options string) *execute {
+func (z *zpoolctl) Event(ctx context.Context, options string) *execute {
 	args := []string{"event"}
 	if len(options) > 0 {
 		args = append(args, options)
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Get Examples:
 //	zpool get [-Hp] [-o "all" | field[,...]] <"all" | property[,...]> <pool> ...
-func (z *zpoolctl) Get(name, options string, out []string, properties ...string) *execute {
+func (z *zpoolctl) Get(ctx context.Context, name, options string, out []string, properties ...string) *execute {
 	args := []string{"get"}
 	if len(options) > 0 {
 		args = append(args, options)
@@ -1194,29 +1197,30 @@ func (z *zpoolctl) Get(name, options string, out []string, properties ...string)
 		args = append(args, kv)
 	}
 	args = append(args, name)
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Set Examples:
 //	zpool set <property=value> <pool>
-func (z *zpoolctl) Set(name, k, v string) *execute {
+func (z *zpoolctl) Set(ctx context.Context, name, k, v string) *execute {
 	args := []string{"set", k + "=" + v, name}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 // Sync Examples:
 //	zpool sync [pool] ...
-func (z *zpoolctl) Sync(names ...string) *execute {
+func (z *zpoolctl) Sync(ctx context.Context, names ...string) *execute {
 	args := []string{"sync"}
 	if names != nil {
 		for _, name := range names {
 			args = append(args, name)
 		}
 	}
-	return &execute{name: z.cmd, args: args}
+	return &execute{ctx: ctx, name: z.cmd, args: args}
 }
 
 type execute struct {
+	ctx  context.Context
 	name string
 	args []string
 }
@@ -1226,11 +1230,22 @@ func (e *execute) Commit() string {
 }
 
 func (e *execute) Exec() ([]byte, error) {
-	return execution(fmt.Sprintf(`%s %s`, e.name, strings.Join(e.args, " ")))
+	if e.ctx == nil {
+		e.ctx = context.Background()
+	}
+	return execution(e.ctx, fmt.Sprintf(`%s %s`, e.name, strings.Join(e.args, " ")))
 }
 
-func execution(shell string) ([]byte, error) {
-	data, err := exec.Command("/bin/sh", "-c", shell).CombinedOutput()
+func (e *execute) Bash() *exec.Cmd {
+	if e.ctx == nil {
+		e.ctx = context.Background()
+	}
+	shell := fmt.Sprintf(`%s %s`, e.name, strings.Join(e.args, " "))
+	return exec.CommandContext(e.ctx, "/bin/bash", "-c", shell)
+}
+
+func execution(ctx context.Context, shell string) ([]byte, error) {
+	data, err := exec.CommandContext(ctx, "/bin/sh", "-c", shell).CombinedOutput()
 	if bytes.HasSuffix(data, []byte("\n")) {
 		data = bytes.TrimSuffix(data, []byte("\n"))
 	}

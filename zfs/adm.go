@@ -107,7 +107,7 @@ func (z *ZFSadm) GetPoolIO(ctx context.Context, name string) (string, string, st
 	//	return "", "", "", "", err
 	//}
 
-	execute := ZPoolCtl(z.zpool).Iostat(name, "", "", "-Hp", `-n 5 2 | tail -1`)
+	execute := ZPoolCtl(z.zpool).Iostat(ctx, name, "", "", "-Hp", `-n 5 2 | tail -1`)
 	data, _ := execute.Exec()
 	line := strings.Split(strings.TrimSuffix(string(data), "\n"), "\t")
 	if len(line) > 6 {
@@ -121,7 +121,7 @@ func (z *ZFSadm) GetPoolIO(ctx context.Context, name string) (string, string, st
 }
 
 func (z *ZFSadm) ImportPool(ctx context.Context, name string) error {
-	execute := z.RawZPool().Import5(name, "", nil, "", "", false, false, false, "", false, false, "")
+	execute := z.RawZPool().Import5(ctx, name, "", nil, "", "", false, false, false, "", false, false, "")
 	_, err := execute.Exec()
 	if err != nil {
 		return fmt.Errorf("%s: %v", execute.Commit(), err)
@@ -136,7 +136,7 @@ func (z *ZFSadm) CreatePool(ctx context.Context, name, compression, raid string,
 	}
 
 	pool := &Pool{Name: name}
-	execute := ZPoolCtl(z.zpool).Create(name, "-f", "", "", nil, raid, devices...)
+	execute := ZPoolCtl(z.zpool).Create(ctx, name, "-f", "", "", nil, raid, devices...)
 	_, err := execute.Exec()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
@@ -151,7 +151,7 @@ func (z *ZFSadm) CreatePool(ctx context.Context, name, compression, raid string,
 		"quota":       strconv.FormatInt(_quota, 10),
 	}
 
-	execute = ZFSCtl(z.zfs).Set(name, properties)
+	execute = ZFSCtl(z.zfs).Set(ctx, name, properties)
 	_, err = execute.Exec()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
@@ -166,7 +166,7 @@ func (z *ZFSadm) ExpensePool(ctx context.Context, name string, devices ...string
 		return nil, err
 	}
 
-	execute := ZPoolCtl(z.zpool).Add(name, "", devices...)
+	execute := ZPoolCtl(z.zpool).Add(ctx, name, "", devices...)
 	_, err = execute.Exec()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
@@ -189,7 +189,7 @@ func (z *ZFSadm) SetPoolQuota(ctx context.Context, name string, quota float64) (
 	properties := map[string]string{
 		"quota": strconv.FormatInt(_quota, 10),
 	}
-	execute := ZFSCtl(z.zfs).Set(name, properties)
+	execute := ZFSCtl(z.zfs).Set(ctx, name, properties)
 	_, err = execute.Exec()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
@@ -201,11 +201,11 @@ func (z *ZFSadm) SetPoolQuota(ctx context.Context, name string, quota float64) (
 }
 
 func (z *ZFSadm) wrapPool(ctx context.Context, name string, out *Pool) {
-	execute := ZPoolCtl(z.zpool).Get(name, "-Hp", nil, "all")
+	execute := ZPoolCtl(z.zpool).Get(ctx, name, "-Hp", nil, "all")
 	data, _ := execute.Exec()
 	SetValue(data, out)
 
-	execute = ZFSCtl(z.zfs).Get(name, "-Hp", "", nil, "", "", "all")
+	execute = ZFSCtl(z.zfs).Get(ctx, name, "-Hp", "", nil, "", "", "all")
 	data, _ = execute.Exec()
 	SetValue(data, out)
 }
@@ -214,7 +214,7 @@ func (z *ZFSadm) GetPools(ctx context.Context) (map[string]*Pool, error) {
 	pools := make(map[string]*Pool, 0)
 	// zpool list -Hp -o name
 	shell := ZPoolCtl(adm.zpool).
-		List("", "-Hp", []string{"name"}, "")
+		List(ctx, "", "-Hp", []string{"name"}, "")
 	out, _ := shell.Exec()
 	if len(out) == 0 {
 		return pools, nil
@@ -234,7 +234,7 @@ func (z *ZFSadm) GetPools(ctx context.Context) (map[string]*Pool, error) {
 
 func (z *ZFSadm) getPool(ctx context.Context, name string) (*Pool, error) {
 	shell := ZPoolCtl(adm.zpool).
-		List(name, "-Hp", []string{"name"}, "")
+		List(ctx, name, "-Hp", []string{"name"}, "")
 	out, _ := shell.Exec()
 	if len(out) == 0 {
 		return nil, fmt.Errorf("pool '%s' is not exists", name)
@@ -259,7 +259,7 @@ func (z *ZFSadm) DeletePool(ctx context.Context, name string) (*Pool, error) {
 		return nil, fmt.Errorf("pool '%s' is not exists: %v", name, err)
 	}
 
-	execute := ZPoolCtl(z.zpool).Destroy(name, false)
+	execute := ZPoolCtl(z.zpool).Destroy(ctx, name, false)
 	_, err = execute.Exec()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
@@ -272,7 +272,7 @@ func (z *ZFSadm) GetFileSystems(ctx context.Context) (map[string]*Volume, error)
 	filesystems := make(map[string]*Volume, 0)
 	// 获取所有的 filesystem
 	shell := ZFSCtl(adm.zfs).
-		List("", "-Hp", "", []string{"name", "origin"}, "", "", "filesystem")
+		List(ctx, "", "-Hp", "", []string{"name", "origin"}, "", "", "filesystem")
 	out, _ := shell.Exec()
 	lines := strings.Split(string(out), "\n")
 	for _, line := range lines {
@@ -308,7 +308,7 @@ func (z *ZFSadm) GetFileSystem(ctx context.Context, name string) (*Volume, error
 
 func (z *ZFSadm) getFileSystem(ctx context.Context, name string) (*Volume, error) {
 	shell := ZFSCtl(adm.zfs).
-		Get(name, "-Hp", "", []string{"name"}, "", "", "all")
+		Get(ctx, name, "-Hp", "", []string{"name"}, "", "", "all")
 	_, err := shell.Exec()
 	if err != nil {
 		return nil, err
@@ -317,7 +317,7 @@ func (z *ZFSadm) getFileSystem(ctx context.Context, name string) (*Volume, error
 }
 
 func (z *ZFSadm) wrapFileSystem(ctx context.Context, name string, out *Volume) {
-	execute := ZFSCtl(z.zfs).Get(name, "-Hp", "", nil, "", "", "all")
+	execute := ZFSCtl(z.zfs).Get(ctx, name, "-Hp", "", nil, "", "", "all")
 	data, _ := execute.Exec()
 	SetValue(data, out)
 }
@@ -333,13 +333,13 @@ func (z *ZFSadm) CreateFileSystem(ctx context.Context, name string, properties m
 	}
 
 	fs := &Volume{Name: name}
-	execute := ZFSCtl(z.zfs).CreateFileSystem(name, nil)
+	execute := ZFSCtl(z.zfs).CreateFileSystem(ctx, name, nil)
 	if _, err := execute.Exec(); err != nil {
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
 
 	if properties != nil {
-		execute = ZFSCtl(z.zfs).Set(name, properties)
+		execute = ZFSCtl(z.zfs).Set(ctx, name, properties)
 		if _, err := execute.Exec(); err != nil {
 			return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 		}
@@ -357,7 +357,7 @@ func (z *ZFSadm) ShareFileSystem(ctx context.Context, name string, ips []string,
 	}
 
 	properties := map[string]string{"sync": "disabled"}
-	execute := ZFSCtl(z.zfs).Set(name, properties)
+	execute := ZFSCtl(z.zfs).Set(ctx, name, properties)
 	_, _ = execute.Exec()
 
 	args := ""
@@ -366,7 +366,7 @@ func (z *ZFSadm) ShareFileSystem(ctx context.Context, name string, ips []string,
 	}
 	args += "no_root_squash,insecure"
 	properties = map[string]string{"sharenfs": fmt.Sprintf(`'%s'`, args)}
-	execute = ZFSCtl(z.zfs).Set(name, properties)
+	execute = ZFSCtl(z.zfs).Set(ctx, name, properties)
 	if _, err := execute.Exec(); err != nil {
 		return fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
@@ -381,7 +381,7 @@ func (z *ZFSadm) UnShareFileSystem(ctx context.Context, name string) error {
 	}
 
 	properties := map[string]string{"sharenfs": "off"}
-	execute := ZFSCtl(z.zfs).Set(name, properties)
+	execute := ZFSCtl(z.zfs).Set(ctx, name, properties)
 	if _, err := execute.Exec(); err != nil {
 		return fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
@@ -393,7 +393,7 @@ func (z *ZFSadm) UnShareFileSystem(ctx context.Context, name string) error {
 func (z *ZFSadm) DeleteFileSystem(ctx context.Context, name string) error {
 
 	options := "-rRf"
-	execute := ZFSCtl(z.zfs).DestroyFileSystemOrVolume(name, options)
+	execute := ZFSCtl(z.zfs).DestroyFileSystemOrVolume(ctx, name, options)
 	if _, err := execute.Exec(); err != nil {
 		return fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
@@ -405,7 +405,7 @@ func (z *ZFSadm) GetVolumes(ctx context.Context) (map[string]*Volume, error) {
 	volumes := make(map[string]*Volume, 0)
 	// 获取所有的 volume
 	shell := ZFSCtl(adm.zfs).
-		List("", "-Hp", "", []string{"name", "origin"}, "", "", "volume")
+		List(ctx, "", "-Hp", "", []string{"name", "origin"}, "", "", "volume")
 	out, err := shell.Exec()
 	if err != nil {
 		return nil, err
@@ -445,7 +445,7 @@ func (z *ZFSadm) GetVolume(ctx context.Context, name string) (*Volume, error) {
 
 func (z *ZFSadm) getVolume(ctx context.Context, name string) (*Volume, error) {
 	shell := ZFSCtl(adm.zfs).
-		Get(name, "-Hp", "", []string{"name"}, "", "", "all")
+		Get(ctx, name, "-Hp", "", []string{"name"}, "", "", "all")
 	_, err := shell.Exec()
 	if err != nil {
 		return nil, fmt.Errorf("volume '%s' is not exists", name)
@@ -454,7 +454,7 @@ func (z *ZFSadm) getVolume(ctx context.Context, name string) (*Volume, error) {
 }
 
 func (z *ZFSadm) wrapVolume(ctx context.Context, name string, volume *Volume) {
-	execute := ZFSCtl(z.zfs).Get(name, "-Hp", "", nil, "", "", "all")
+	execute := ZFSCtl(z.zfs).Get(ctx, name, "-Hp", "", nil, "", "", "all")
 	data, _ := execute.Exec()
 	SetValue(data, volume)
 }
@@ -470,13 +470,13 @@ func (z *ZFSadm) CreateVolume(ctx context.Context, name string, properties map[s
 	}
 
 	vol := &Volume{Name: name}
-	execute := ZFSCtl(z.zfs).CreateVolume(name, 4096, nil, strconv.FormatInt(size, 10))
+	execute := ZFSCtl(z.zfs).CreateVolume(ctx, name, 4096, nil, strconv.FormatInt(size, 10))
 	if _, err := execute.Exec(); err != nil {
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
 
 	if properties != nil {
-		execute = ZFSCtl(z.zfs).Set(name, properties)
+		execute = ZFSCtl(z.zfs).Set(ctx, name, properties)
 		if _, err := execute.Exec(); err != nil {
 			return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 		}
@@ -489,7 +489,7 @@ func (z *ZFSadm) CreateVolume(ctx context.Context, name string, properties map[s
 func (z *ZFSadm) DeleteVolume(ctx context.Context, name string) error {
 
 	options := "-Rrf"
-	execute := ZFSCtl(z.zfs).DestroyFileSystemOrVolume(name, options)
+	execute := ZFSCtl(z.zfs).DestroyFileSystemOrVolume(ctx, name, options)
 	if _, err := execute.Exec(); err != nil {
 		return fmt.Errorf("%s: %v", execute.Commit(), err.Error())
 	}
@@ -501,7 +501,7 @@ func (z *ZFSadm) GetSnapshots(ctx context.Context) (map[string]*Snapshot, error)
 	snapshots := make(map[string]*Snapshot, 0)
 	// 获取所有的 snapshot
 	shell := ZFSCtl(adm.zfs).
-		List("", "-Hp", "", []string{"name"}, "", "", "snapshot")
+		List(ctx, "", "-Hp", "", []string{"name"}, "", "", "snapshot")
 	out, err := shell.Exec()
 	if err != nil {
 		return nil, err
@@ -536,7 +536,7 @@ func (z *ZFSadm) GetSnapshot(ctx context.Context, name string) (*Snapshot, error
 
 func (z *ZFSadm) getSnapshot(ctx context.Context, name string) (*Snapshot, error) {
 	shell := ZFSCtl(adm.zfs).
-		Get(name, "-Hp", "", []string{"name"}, "", "", "all")
+		Get(ctx, name, "-Hp", "", []string{"name"}, "", "", "all")
 	_, err := shell.Exec()
 	if err != nil {
 		return nil, fmt.Errorf("volume '%s' is not exists", name)
@@ -547,7 +547,7 @@ func (z *ZFSadm) getSnapshot(ctx context.Context, name string) (*Snapshot, error
 
 func (z *ZFSadm) wrapSnapshot(ctx context.Context, name string, out *Snapshot) {
 	shell := ZFSCtl(adm.zfs).
-		Get(name, "-Hp", "", nil, "", "", "all")
+		Get(ctx, name, "-Hp", "", nil, "", "", "all")
 	data, _ := shell.Exec()
 	setSnapshot(data, out)
 }
@@ -568,13 +568,13 @@ func (z *ZFSadm) CreateSnapshot(ctx context.Context, parent, name string, proper
 	}
 
 	snapshot := &Snapshot{Name: name, Parent: parent}
-	execute := ZFSCtl(z.zfs).Snapshot(name, nil)
+	execute := ZFSCtl(z.zfs).Snapshot(ctx, name, nil)
 	if _, err := execute.Exec(); err != nil {
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
 
 	if properties != nil {
-		execute = ZFSCtl(z.zfs).Set(name, properties)
+		execute = ZFSCtl(z.zfs).Set(ctx, name, properties)
 		if _, err := execute.Exec(); err != nil {
 			return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 		}
@@ -587,7 +587,7 @@ func (z *ZFSadm) CreateSnapshot(ctx context.Context, parent, name string, proper
 func (z *ZFSadm) DeleteSnapshot(ctx context.Context, name string) error {
 
 	options := "-dr"
-	execute := ZFSCtl(z.zfs).DestroySnapshot(name, options)
+	execute := ZFSCtl(z.zfs).DestroySnapshot(ctx, name, options)
 	if _, err := execute.Exec(); err != nil {
 		return fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
@@ -607,13 +607,13 @@ func (z *ZFSadm) CloneFileSystem(ctx context.Context, name, snap string, propert
 
 	pool := strings.SplitN(snap, "/", 2)[0]
 	name = path.Join(pool, name)
-	execute := ZFSCtl(z.zfs).Clone(name, nil, snap)
+	execute := ZFSCtl(z.zfs).Clone(ctx, name, nil, snap)
 	if _, err := execute.Exec(); err != nil {
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
 
 	if properties != nil {
-		execute = ZFSCtl(z.zfs).Set(name, properties)
+		execute = ZFSCtl(z.zfs).Set(ctx, name, properties)
 		if _, err := execute.Exec(); err != nil {
 			return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 		}
@@ -635,13 +635,13 @@ func (z *ZFSadm) CloneVolume(ctx context.Context, name, snap string, properties 
 
 	pool := strings.SplitN(snap, "/", 2)[0]
 	name = path.Join(pool, name)
-	execute := ZFSCtl(z.zfs).Clone(name, nil, snap)
+	execute := ZFSCtl(z.zfs).Clone(ctx, name, nil, snap)
 	if _, err := execute.Exec(); err != nil {
 		return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 	}
 
 	if properties != nil {
-		execute = ZFSCtl(z.zfs).Set(name, properties)
+		execute = ZFSCtl(z.zfs).Set(ctx, name, properties)
 		if _, err := execute.Exec(); err != nil {
 			return nil, fmt.Errorf("%s: %v", execute.Commit(), err)
 		}
@@ -653,8 +653,16 @@ func (z *ZFSadm) CloneVolume(ctx context.Context, name, snap string, properties 
 }
 
 func (z *ZFSadm) Get(ctx context.Context, name, options, max string, out []string, t, s string, properties ...string) ([]byte, error) {
-	execute := ZFSCtl(z.zfs).Get(name, options, max, out, t, s, properties...)
+	execute := ZFSCtl(z.zfs).Get(ctx, name, options, max, out, t, s, properties...)
 	return execute.Exec()
+}
+
+func (z *ZFSadm) SendBash(ctx context.Context, name, options, i string) *exec.Cmd {
+	return ZFSCtl(z.zfs).Send(ctx, name, options, i).Bash()
+}
+
+func (z *ZFSadm) ReceiveBash(ctx context.Context, name, options string, properties map[string]string) *exec.Cmd {
+	return ZFSCtl(z.zfs).Receive(ctx, name, options, properties, "").Bash()
 }
 
 func (z *ZFSadm) RawZFS() *zfsctl {
