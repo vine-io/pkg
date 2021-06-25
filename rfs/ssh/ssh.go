@@ -24,12 +24,20 @@ package ssh
 
 import (
 	"context"
-	"io"
+	"errors"
+	"fmt"
+	"io/fs"
+	"net"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/lack-io/pkg/rfs"
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
+
+var errInvalidWrite = errors.New("invalid write result")
 
 var _ rfs.Rfs = (*client)(nil)
 
@@ -43,39 +51,25 @@ func (c *client) Init() error {
 
 	var err error
 	c.cc, err = ssh.Dial(c.options.network, c.options.addr, &c.options.ClientConfig)
-	return err
+	if err != nil {
+		return fmt.Errorf("%w: %v", rfs.ErrConnect, err)
+	}
+	return nil
 }
 
-func (c *client) List(ctx context.Context) ([]*rfs.FileStat, error) {
-	panic("implement me")
-}
+func (c *client) Exec(ctx context.Context, cmd *rfs.Cmd, opts ...rfs.ExecOption) error {
+	if cmd == nil {
+		return rfs.ErrEmptyCmd
+	}
 
-func (c *client) Write(ctx context.Context, toPath string, src io.Reader) error {
-	panic("implement me")
-}
-
-func (c *client) Copy(ctx context.Context, fromPath, toPath string) error {
-	panic("implement me")
-}
-
-func (c *client) Exec(ctx context.Context, cmd *rfs.Cmd) error {
 	session, err := c.cc.NewSession()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %v", rfs.ErrConnect, err)
 	}
 
 	shell := cmd.Name
 	for _, arg := range cmd.Args {
 		shell += " " + arg
-	}
-
-	for _, env := range cmd.Env {
-		parts := strings.Split(env, "=")
-		if len(parts) > 1 {
-			if err = session.Setenv(parts[0], parts[1]); err != nil {
-				return err
-			}
-		}
 	}
 
 	session.Stdin = cmd.Stdin
@@ -85,19 +79,213 @@ func (c *client) Exec(ctx context.Context, cmd *rfs.Cmd) error {
 	ech := make(chan error, 1)
 	done := make(chan struct{}, 1)
 	go func() {
-		ee := session.Run(shell)
-		if ee != nil {
-			ech <- ee
-		} else {
-			done <- struct{}{}
+		var ee error
+		for _, env := range cmd.Env {
+			parts := strings.Split(env, "=")
+			if len(parts) > 1 {
+				if ee = session.Setenv(parts[0], parts[1]); ee != nil {
+					ech <- ee
+					return
+				}
+			}
 		}
+
+		if ee = session.Run(shell); ee != nil {
+			ech <- ee
+			return
+		}
+		done <- struct{}{}
 	}()
 
 	select {
 	case <-ctx.Done():
 		return rfs.ErrTimeout
 	case err = <-ech:
-		return err
+		return fmt.Errorf("%w: %v", rfs.ErrRequest, err)
+	case <-done:
+		return nil
+	}
+}
+
+func (c *client) List(ctx context.Context, remotePath string, opts ...rfs.ListOption) ([]os.FileInfo, error) {
+	ftp, err := sftp.NewClient(c.cc)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", rfs.ErrConnect, err)
+	}
+
+	var (
+		ech   = make(chan error, 1)
+		done  = make(chan struct{}, 1)
+		items = make([]os.FileInfo, 0)
+	)
+
+	go func() {
+		var ee error
+		items, ee = ftp.ReadDir(remotePath)
+		if ee != nil {
+			ech <- ee
+			return
+		}
+
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, rfs.ErrTimeout
+	case err = <-ech:
+		return nil, fmt.Errorf("%w: %v", rfs.ErrRequest, err)
+	case <-done:
+	}
+
+	return items, nil
+}
+
+func (c *client) Get(ctx context.Context, remotePath, localPath string, fn rfs.IOFn, opts ...rfs.GetOption) error {
+	ftp, err := sftp.NewClient(c.cc)
+	if err != nil {
+		return fmt.Errorf("%w: %v", rfs.ErrConnect, err)
+	}
+
+	stat, err := ftp.Stat(remotePath)
+	if errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("%w: %v", rfs.ErrNotExists, err)
+	}
+
+	var (
+		buf  = make([]byte, 32*1024)
+		ech  = make(chan error, 1)
+		done = make(chan struct{}, 1)
+	)
+
+	go func() {
+		var ee error
+
+		if stat.IsDir() {
+			lstat, e1 := os.Stat(localPath)
+			if e1 != nil {
+				ech <- err
+				return
+			}
+			if !lstat.IsDir() {
+				ech <- fmt.Errorf("%w: %v", rfs.ErrAlreadyExists, localPath)
+				return
+			}
+
+			walker := ftp.Walk(remotePath)
+			for walker.Step() {
+				if walker.Err() != nil || walker.Path() == remotePath {
+					continue
+				}
+
+				sub := strings.TrimPrefix(walker.Path(), remotePath)
+				if walker.Stat().IsDir() {
+					_ = os.MkdirAll(filepath.Join(localPath, sub), os.ModePerm)
+					continue
+				}
+				dst := filepath.Join(localPath, sub)
+				if _, ee = c.get(ctx, ftp, walker.Path(), dst, buf, fn); ee != nil {
+					break
+				}
+			}
+
+		} else {
+			lstat, _ := os.Stat(localPath)
+			if lstat != nil && lstat.IsDir() {
+				localPath = filepath.Join(localPath, filepath.Base(remotePath))
+			}
+
+			_, ee = c.get(ctx, ftp, remotePath, localPath, buf, fn)
+		}
+
+		if ee != nil {
+			ech <- ee
+			return
+		}
+
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return rfs.ErrTimeout
+	case err = <-ech:
+		return fmt.Errorf("%w: %v", rfs.ErrRequest, err)
+	case <-done:
+		return nil
+	}
+}
+
+func (c *client) Put(ctx context.Context, localPath, remotePath string, fn rfs.IOFn, opts ...rfs.PutOption) error {
+	ftp, err := sftp.NewClient(c.cc)
+	if err != nil {
+		return fmt.Errorf("%w: %v", rfs.ErrConnect, err)
+	}
+
+	stat, err := os.Stat(localPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("%w: %v", rfs.ErrNotExists, err)
+	}
+
+	var (
+		buf  = make([]byte, 32*1024)
+		ech  = make(chan error, 1)
+		done = make(chan struct{}, 1)
+	)
+
+	go func() {
+		var ee error
+
+		if stat.IsDir() {
+			rstat, e1 := ftp.Stat(remotePath)
+			if e1 != nil {
+				ech <- err
+				return
+			}
+			if !rstat.IsDir() {
+				ech <- fmt.Errorf("%w: %v", rfs.ErrAlreadyExists, remotePath)
+				return
+			}
+
+			ee = filepath.WalkDir(localPath, func(path string, d fs.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+				if path == localPath {
+					return nil
+				}
+
+				sub := strings.TrimPrefix(path, localPath)
+				if d.IsDir() {
+					return ftp.MkdirAll(filepath.Join(remotePath, sub))
+				}
+				dst := filepath.Join(remotePath, sub)
+				_, e1 := c.put(ctx, ftp, path, dst, buf, fn)
+				return e1
+			})
+
+		} else {
+			rstat, _ := ftp.Stat(remotePath)
+			if rstat != nil && rstat.IsDir() {
+				remotePath = filepath.Join(remotePath, filepath.Base(localPath))
+			}
+
+			_, ee = c.put(ctx, ftp, localPath, remotePath, buf, fn)
+		}
+
+		if ee != nil {
+			ech <- ee
+			return
+		}
+
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return rfs.ErrTimeout
+	case err = <-ech:
+		return fmt.Errorf("%w: %v", rfs.ErrRequest, err)
 	case <-done:
 		return nil
 	}
@@ -108,6 +296,15 @@ func New(opts ...Option) *client {
 
 	for _, opt := range opts {
 		opt(&options)
+	}
+
+	if options.network == "" {
+		options.network = "tcp"
+	}
+	if options.HostKeyCallback == nil {
+		options.HostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			return nil
+		}
 	}
 
 	return &client{options: options}

@@ -20,30 +20,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package rfs
+package winrm
 
-import "context"
-
-type ExecOptions struct {
-	ctx context.Context
+type pslist struct {
+	Objects []psobject `xml:"Object"`
 }
 
-type ExecOption func(*ExecOptions)
-
-type ListOptions struct {
-	ctx context.Context
+type psobject struct {
+	Properties []psproperty `xml:"Property"`
+	Value      string       `xml:",innerxml"`
 }
 
-type ListOption func(*ListOptions)
-
-type GetOptions struct {
-	ctx context.Context
+type psproperty struct {
+	Name  string `xml:"Name,attr"`
+	Value string `xml:",innerxml"`
 }
-
-type GetOption func(*GetOptions)
-
-type PutOptions struct {
-	ctx context.Context
-}
-
-type PutOption func(*PutOptions)

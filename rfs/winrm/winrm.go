@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"sync"
 
 	"github.com/lack-io/pkg/rfs"
 	"github.com/masterzen/winrm"
@@ -28,32 +30,26 @@ func New(opts ...Option) *client {
 }
 
 func (c *client) Init() error {
+
+	var err error
+	c.cc, err = winrm.NewClient(&c.opts.Endpoint, c.opts.username, c.opts.password)
+	if err != nil {
+		return fmt.Errorf("%w: %v", rfs.ErrConnect, err)
+	}
+
 	return nil
 }
 
-func (c *client) List(ctx context.Context) ([]*rfs.FileStat, error) {
-	panic("implement me")
-}
-
-func (c *client) Write(ctx context.Context, toPath string, src io.Reader) error {
-	panic("implement me")
-}
-
-func (c *client) Copy(ctx context.Context, fromPath, toPath string) error {
-	panic("implement me")
-}
-
-func (c *client) Exec(ctx context.Context, cmd *rfs.Cmd) error {
+func (c *client) Exec(ctx context.Context, cmd *rfs.Cmd, opts ...rfs.ExecOption) error {
 	if cmd == nil {
 		return rfs.ErrEmptyCmd
 	}
-
-	cc, err := winrm.NewClient(&c.opts.Endpoint, c.opts.username, c.opts.password)
-	if err != nil {
-		return fmt.Errorf("connect to server: %w", err)
+	if cmd.Stdout == nil || cmd.Stderr == nil {
+		return rfs.ErrMissingCmd
 	}
 
 	var (
+		err   error
 		shell = cmd.Name
 		ech   = make(chan error, 1)
 		done  = make(chan struct{}, 1)
@@ -62,19 +58,156 @@ func (c *client) Exec(ctx context.Context, cmd *rfs.Cmd) error {
 		shell += " " + arg
 	}
 	go func() {
-		_, err = cc.RunWithInput(shell, cmd.Stdout, cmd.Stderr, cmd.Stdin)
-		if err != nil {
-			ech <- err
-		} else {
-			done <- struct{}{}
+		var ee error
+		var bash *winrm.Shell
+		bash, ee = c.cc.CreateShell()
+		if ee != nil {
+			ech <- ee
+			return
 		}
+		defer bash.Close()
+
+		var command *winrm.Command
+		command, ee = bash.Execute(cmd.Name, cmd.Args...)
+		if ee != nil {
+			ech <- ee
+			return
+		}
+
+		var wg sync.WaitGroup
+		wg.Add(3)
+
+		go func() {
+			if cmd.Stdin == nil {
+				wg.Done()
+				return
+			}
+
+			defer func() {
+				command.Stdin.Close()
+				wg.Done()
+			}()
+			io.Copy(command.Stdin, cmd.Stdin)
+		}()
+		go func() {
+			defer wg.Done()
+			io.Copy(cmd.Stdout, command.Stdout)
+		}()
+		go func() {
+			defer wg.Done()
+			io.Copy(cmd.Stderr, command.Stderr)
+		}()
+
+		command.Wait()
+		wg.Wait()
+		command.Close()
+
+		if command.ExitCode() != 0 {
+			stderr := []byte("")
+			stdout := []byte("")
+			cmd.Stdout.Write(stdout)
+			cmd.Stderr.Write(stderr)
+			ech <- fmt.Errorf("%v: %v", string(stderr), string(stderr))
+			return
+		}
+
+		done <- struct{}{}
 	}()
 
 	select {
 	case <-ctx.Done():
 		return rfs.ErrTimeout
 	case err = <-ech:
-		return err
+		return fmt.Errorf("%w: %v", rfs.ErrRequest, err)
+	case <-done:
+		return nil
+	}
+}
+
+func (c *client) List(ctx context.Context, remotePath string, opts ...rfs.ListOption) ([]os.FileInfo, error) {
+	cc, err := winrm.NewClient(&c.opts.Endpoint, c.opts.username, c.opts.password)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", rfs.ErrConnect, err)
+	}
+
+	var (
+		ech   = make(chan error, 1)
+		done  = make(chan struct{}, 1)
+		items = make([]os.FileInfo, 0)
+	)
+
+	go func() {
+		var ee error
+		items, ee = fetchList(cc, remotePath)
+		if ee != nil {
+			ech <- ee
+			return
+		}
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, rfs.ErrTimeout
+	case err = <-ech:
+		return nil, fmt.Errorf("%w: %v", rfs.ErrRequest, err)
+	case <-done:
+	}
+
+	return items, nil
+}
+
+func (c *client) Get(ctx context.Context, remotePath, localPath string, fn rfs.IOFn, opts ...rfs.GetOption) error {
+	var (
+		err  error
+		ech  = make(chan error, 1)
+		done = make(chan struct{}, 1)
+	)
+
+	go func() {
+		var ee error
+
+		ee = c.get(ctx, remotePath, localPath, fn)
+		if ee != nil {
+			ech <- ee
+			return
+		}
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return rfs.ErrTimeout
+	case err = <-ech:
+		return fmt.Errorf("%w: %v", rfs.ErrRequest, err)
+	case <-done:
+		return nil
+	}
+}
+
+func (c *client) Put(ctx context.Context, localPath, remotePath string, fn rfs.IOFn, opts ...rfs.PutOption) error {
+	var (
+		err  error
+		ech  = make(chan error, 1)
+		done = make(chan struct{}, 1)
+	)
+
+	go func() {
+		var ee error
+
+		ee = c.Copy(localPath, remotePath, fn)
+		if ee != nil {
+			ech <- ee
+			return
+		}
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return rfs.ErrTimeout
+	case err = <-ech:
+		return fmt.Errorf("%w: %v", rfs.ErrRequest, err)
 	case <-done:
 		return nil
 	}

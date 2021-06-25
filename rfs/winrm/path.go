@@ -20,30 +20,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package rfs
+package winrm
 
-import "context"
+import (
+	"fmt"
+	"strings"
+)
 
-type ExecOptions struct {
-	ctx context.Context
+func winPath(path string) string {
+	if len(path) == 0 {
+		return path
+	}
+
+	if strings.Contains(path, " ") {
+		path = fmt.Sprintf("'%s'", strings.Trim(path, "'\""))
+	}
+
+	return strings.Replace(path, "/", "\\", -1)
 }
-
-type ExecOption func(*ExecOptions)
-
-type ListOptions struct {
-	ctx context.Context
-}
-
-type ListOption func(*ListOptions)
-
-type GetOptions struct {
-	ctx context.Context
-}
-
-type GetOption func(*GetOptions)
-
-type PutOptions struct {
-	ctx context.Context
-}
-
-type PutOption func(*PutOptions)

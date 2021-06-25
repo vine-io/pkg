@@ -26,20 +26,18 @@ import (
 	"context"
 	"errors"
 	"io"
+	"os"
 )
 
 var (
-	ErrEmptyCmd = errors.New("empty cmd")
-	ErrTimeout  = errors.New("request timeout")
+	ErrConnect       = errors.New("connect error")
+	ErrEmptyCmd      = errors.New("empty cmd")
+	ErrTimeout       = errors.New("request timeout")
+	ErrMissingCmd    = errors.New("missing stdout or stdout")
+	ErrRequest       = errors.New("request exception")
+	ErrNotExists     = errors.New("file does not exist")
+	ErrAlreadyExists = errors.New("file already exists")
 )
-
-type FileStat struct {
-	Name    string
-	Size    string
-	Mod     uint32
-	ModTime int64
-	IsDir   string
-}
 
 type Cmd struct {
 	Name string
@@ -51,10 +49,21 @@ type Cmd struct {
 	Stderr io.Writer
 }
 
+type IOMetric struct {
+	Name  string
+	From  string
+	To    string
+	Total int64
+	Block int64
+	Speed int64
+}
+
+type IOFn func(*IOMetric)
+
 type Rfs interface {
 	Init() error
-	List(ctx context.Context) ([]*FileStat, error)
-	Write(ctx context.Context, toPath string, src io.Reader) error
-	Copy(ctx context.Context, fromPath, toPath string) error
-	Exec(ctx context.Context, cmd *Cmd) error
+	Exec(ctx context.Context, cmd *Cmd, opts ...ExecOption) error
+	List(ctx context.Context, remotePath string, opts ...ListOption) ([]os.FileInfo, error)
+	Get(ctx context.Context, remotePath, localPath string, fn IOFn, opts ...GetOption) error
+	Put(ctx context.Context, localPath, remotePath string, fn IOFn, opts ...PutOption) error
 }
