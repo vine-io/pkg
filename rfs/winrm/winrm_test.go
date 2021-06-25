@@ -62,8 +62,8 @@ func Test_client_Get(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	src := "C:\\howlink\\aaa\\winrm.go"
-	dst := "/tmp/winrm.go"
+	src := "C:\\howlink\\aaa\\hello"
+	dst := "/tmp/hello1"
 	err := cc.Get(ctx, src, dst, func(metric *rfs.IOMetric) {
 		t.Log(metric)
 	})
@@ -86,8 +86,8 @@ func Test_client_Put(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	src := "winrm.go"
-	dst := "C:\\howlink\\aaa\\winrm.go"
+	src := "/tmp/hello"
+	dst := "C:\\howlink\\aaa\\hello"
 	err := cc.Put(ctx, src, dst, func(metric *rfs.IOMetric) {
 		t.Log(metric)
 	})

@@ -19,16 +19,6 @@ type client struct {
 	cc *winrm.Client
 }
 
-func New(opts ...Option) *client {
-	var options Options
-
-	for _, opt := range opts {
-		opt(&options)
-	}
-
-	return &client{opts: options}
-}
-
 func (c *client) Init() error {
 
 	var err error
@@ -211,4 +201,14 @@ func (c *client) Put(ctx context.Context, localPath, remotePath string, fn rfs.I
 	case <-done:
 		return nil
 	}
+}
+
+func New(opts ...Option) *client {
+	var options Options
+
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	return &client{opts: options}
 }

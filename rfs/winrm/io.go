@@ -125,7 +125,7 @@ func doCopy(client *winrm.Client, config Options, in *os.File, toPath string, fn
 			metric.Total = stat.Size()
 		}
 	}
-	err = uploadContent(client, 32*1024, "%TEMP%\\"+tempFile, in, metric, fn)
+	err = uploadContent(client, 0, "%TEMP%\\"+tempFile, in, metric, fn)
 	if err != nil {
 		return fmt.Errorf("error uploading file to %s: %v", tempPath, err)
 	}
@@ -392,7 +392,8 @@ func readContent(ctx context.Context, client *winrm.Client, remotePath string, w
 			for(;;) {
 				$line = $reader.ReadLine()
 				if ($line -eq $null) { break }
-				echo $line
+				$bytes = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($line), 'InsertLineBreaks')
+				echo $bytes
 			}
 		}
 		finally {
