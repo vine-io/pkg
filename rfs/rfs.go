@@ -32,6 +32,7 @@ import (
 var (
 	ErrConnect       = errors.New("connect error")
 	ErrEmptyCmd      = errors.New("empty cmd")
+	ErrInvalidWrite  = errors.New("invalid write result")
 	ErrTimeout       = errors.New("request timeout")
 	ErrMissingCmd    = errors.New("missing stdout or stdout")
 	ErrRequest       = errors.New("request exception")

@@ -38,7 +38,7 @@ func Test_client_List(t *testing.T) {
 	)
 
 	ctx := context.TODO()
-	outs, err := cc.List(ctx, "C:\\howlink")
+	outs, err := cc.List(ctx, "C:\\howlink\\aaa")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +63,7 @@ func Test_client_Get(t *testing.T) {
 
 	ctx := context.TODO()
 	src := "C:\\howlink\\aaa\\hello"
-	dst := "/tmp/hello1"
+	dst := "/tmp/aaa/hello"
 	err := cc.Get(ctx, src, dst, func(metric *rfs.IOMetric) {
 		t.Log(metric)
 	})
@@ -86,8 +86,8 @@ func Test_client_Put(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	src := "/tmp/hello"
-	dst := "C:\\howlink\\aaa\\hello"
+	src := "/tmp/sfz.exe"
+	dst := "C:\\howlink\\aaa\\sfz.exe"
 	err := cc.Put(ctx, src, dst, func(metric *rfs.IOMetric) {
 		t.Log(metric)
 	})

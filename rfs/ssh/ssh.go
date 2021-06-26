@@ -37,7 +37,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-var errInvalidWrite = errors.New("invalid write result")
+
 
 var _ rfs.Rfs = (*client)(nil)
 

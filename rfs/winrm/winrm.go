@@ -155,9 +155,23 @@ func (c *client) Get(ctx context.Context, remotePath, localPath string, fn rfs.I
 	)
 
 	go func() {
-		var ee error
+		info, ee := fetchList(c.cc, remotePath)
+		if ee != nil {
+			ech <- fmt.Errorf("%w: remote path %v", rfs.ErrNotExists, remotePath)
+			return
+		}
+		if len(info) == 0 {
+			ech <- fmt.Errorf("%w: empty directory", rfs.ErrNotExists)
+			return
+		}
 
-		ee = c.get(ctx, remotePath, localPath, fn)
+		if len(info) == 1 {
+			ee = c.get(ctx, remotePath, localPath, fn)
+		} else {
+			_ = os.MkdirAll(localPath, 0755)
+			ee = c.walker(ctx, info, remotePath, localPath, fn)
+		}
+
 		if ee != nil {
 			ech <- ee
 			return

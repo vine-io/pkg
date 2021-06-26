@@ -32,9 +32,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/lack-io/pkg/rfs"
 	"github.com/masterzen/winrm"
-	"github.com/nu7hatch/gouuid"
 )
 
 func (c *client) Copy(fromPath, toPath string, fn rfs.IOFn) error {
@@ -103,10 +103,7 @@ func shouldUploadFile(fi os.FileInfo) bool {
 }
 
 func doCopy(client *winrm.Client, config Options, in *os.File, toPath string, fn rfs.IOFn) error {
-	tempFile, err := tempFileName()
-	if err != nil {
-		return fmt.Errorf("error generating unique filename: %v", err)
-	}
+	tempFile := tempFileName()
 	tempPath := "$env:TEMP\\" + tempFile
 
 	defer func() {
@@ -125,7 +122,7 @@ func doCopy(client *winrm.Client, config Options, in *os.File, toPath string, fn
 			metric.Total = stat.Size()
 		}
 	}
-	err = uploadContent(client, 0, "%TEMP%\\"+tempFile, in, metric, fn)
+	err := uploadContent(client, 0, "%TEMP%\\"+tempFile, in, metric, fn)
 	if err != nil {
 		return fmt.Errorf("error uploading file to %s: %v", tempPath, err)
 	}
@@ -339,13 +336,8 @@ func appendContent(shell *winrm.Shell, filePath, content string) error {
 	return nil
 }
 
-func tempFileName() (string, error) {
-	uniquePart, err := uuid.NewV4()
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("winrmcp-%s.tmp", uniquePart), nil
+func tempFileName() string {
+	return fmt.Sprintf("winrmcp-%s.tmp", uuid.New().String())
 }
 
 func (c *client) get(ctx context.Context, remotePath, localPath string, fn rfs.IOFn) error {
@@ -355,24 +347,31 @@ func (c *client) get(ctx context.Context, remotePath, localPath string, fn rfs.I
 	}
 	defer writer.Close()
 
-	var metric *rfs.IOMetric
-	if fn != nil {
-		metric = &rfs.IOMetric{
-			Name: filepath.Base(remotePath),
-			From: remotePath,
-			To:   localPath,
-		}
-
-		info, _ := fetchList(c.cc, remotePath)
-		if len(info) > 0 {
-			metric.Total = info[0].Size()
-		}
-	}
-
-	return readContent(ctx, c.cc, remotePath, writer, metric, fn)
+	return readContent(ctx, c.cc, remotePath, writer)
 }
 
-func readContent(ctx context.Context, client *winrm.Client, remotePath string, writer *os.File, metric *rfs.IOMetric, fn rfs.IOFn) error {
+func (c *client) walker(ctx context.Context, items []os.FileInfo, root, local string, fn rfs.IOFn) error {
+	for _, item := range items {
+		pth := root + "\\" + item.Name()
+		if item.IsDir() {
+			dirs, _ := fetchList(c.cc, pth)
+			if len(dirs) != 0 {
+				lpth := filepath.Join(local, item.Name())
+				_ = os.MkdirAll(lpth, 0755)
+				if err := c.walker(ctx, dirs, pth, lpth, fn); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+		if err := c.get(ctx, pth, filepath.Join(local, item.Name()), fn); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func readContent(ctx context.Context, client *winrm.Client, remotePath string, writer *os.File) error {
 	shell, err := client.CreateShell()
 	if err != nil {
 		return err
@@ -381,24 +380,7 @@ func readContent(ctx context.Context, client *winrm.Client, remotePath string, w
 	defer shell.Close()
 	script := fmt.Sprintf(`
 		$dest_file_path = [System.IO.Path]::GetFullPath("%s".Trim("'"))
-		if (Test-Path $dest_file_path) {
-			if (Test-Path -Path $dest_file_path -PathType container) {
-				Exit 1
-			}
-		}
-
-		$reader = [System.IO.File]::OpenText($dest_file_path)
-		try {
-			for(;;) {
-				$line = $reader.ReadLine()
-				if ($line -eq $null) { break }
-				$bytes = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($line), 'InsertLineBreaks')
-				echo $bytes
-			}
-		}
-		finally {
-			$reader.Close()
-		}
+		Get-Content $dest_file_path
 	`, remotePath)
 
 	cmd, err := shell.Execute(winrm.Powershell(script))

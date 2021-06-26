@@ -132,7 +132,7 @@ func fcopy(
 			if nw < 0 || nr < nw {
 				nw = 0
 				if ew == nil {
-					ew = errInvalidWrite
+					ew = rfs.ErrInvalidWrite
 				}
 			}
 			written += int64(nw)
