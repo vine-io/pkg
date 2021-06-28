@@ -37,8 +37,6 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-
-
 var _ rfs.Rfs = (*client)(nil)
 
 type client struct {
