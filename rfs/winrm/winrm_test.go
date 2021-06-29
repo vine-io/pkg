@@ -1,8 +1,8 @@
 package winrm
 
 import (
+	"bytes"
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -17,16 +17,15 @@ func Test_client_Exec(t *testing.T) {
 		Timeout(time.Second*3),
 	)
 
+	cc.Init()
+
 	ctx := context.TODO()
-	cmd := rfs.Cmd{
-		Name:   "ipconfig /all",
-		Stdin:  os.Stdin,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-	if err := cc.Exec(ctx, &cmd); err != nil {
+	b := bytes.NewBuffer([]byte(""))
+	c := rfs.NewCmd("ipconfig /all", nil, b)
+	if err := cc.Exec(ctx, c); err != nil {
 		t.Fatal(err)
 	}
+	t.Log(string(b.Bytes()))
 }
 
 func Test_client_List(t *testing.T) {

@@ -1,8 +1,8 @@
 package ssh
 
 import (
+	"bytes"
 	"context"
-	"os"
 	"testing"
 
 	"github.com/lack-io/pkg/rfs"
@@ -16,15 +16,12 @@ func Test_client_Exec(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	c := &rfs.Cmd{
-		Name:   "echo $VINEA",
-		Env:    []string{"VINEA=1"},
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
+	b := bytes.NewBuffer([]byte(""))
+	c := rfs.NewCmd("ifconfig", nil, b)
 	if err := cc.Exec(ctx, c); err != nil {
 		t.Fatal(err)
 	}
+	t.Log(string(b.Bytes()))
 }
 
 func Test_client_List(t *testing.T) {

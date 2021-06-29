@@ -23,6 +23,7 @@
 package ssh
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -31,6 +32,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/lack-io/pkg/rfs"
 	"github.com/pkg/sftp"
@@ -53,6 +55,17 @@ func (c *client) Init() error {
 		return fmt.Errorf("%w: %v", rfs.ErrConnect, err)
 	}
 	return nil
+}
+
+type singleWriter struct {
+	b  bytes.Buffer
+	mu sync.Mutex
+}
+
+func (w *singleWriter) Write(p []byte) (int, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.b.Write(p)
 }
 
 func (c *client) Exec(ctx context.Context, cmd *rfs.Cmd, opts ...rfs.ExecOption) error {

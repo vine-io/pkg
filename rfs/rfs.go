@@ -27,6 +27,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"sync"
 )
 
 var (
@@ -48,6 +49,29 @@ type Cmd struct {
 	Stdin  io.Reader
 	Stdout io.Writer
 	Stderr io.Writer
+}
+
+type singleWriter struct {
+	io.Writer
+	mu sync.Mutex
+}
+
+func (w *singleWriter) Write(p []byte) (int, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.Writer.Write(p)
+}
+
+func NewCmd(name string, args []string, writer io.Writer) *Cmd {
+	w := singleWriter{Writer: writer}
+	return &Cmd{
+		Name:   name,
+		Args:   args,
+		Env:    []string{},
+		Stdin:  os.Stdin,
+		Stdout: &w,
+		Stderr: &w,
+	}
 }
 
 type IOMetric struct {
