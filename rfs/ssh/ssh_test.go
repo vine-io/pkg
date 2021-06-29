@@ -68,8 +68,8 @@ func Test_client_Put(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	src := "."
-	dst := "/root/aaa"
+	src := "ssh.go"
+	dst := "/root/aaa/ssh.go"
 	err := cc.Put(ctx, src, dst, func(metric *rfs.IOMetric) {
 		t.Log(metric)
 	})

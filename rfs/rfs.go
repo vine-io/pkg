@@ -68,7 +68,7 @@ func NewCmd(name string, args []string, writer io.Writer) *Cmd {
 		Name:   name,
 		Args:   args,
 		Env:    []string{},
-		Stdin:  os.Stdin,
+		Stdin:  nil,
 		Stdout: &w,
 		Stderr: &w,
 	}
