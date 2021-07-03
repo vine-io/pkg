@@ -33,6 +33,7 @@ import (
 	"math/rand"
 	"reflect"
 )
+
 // Logger allows for simple logging as inject traverses and populates the
 // object Container.
 type Logger interface {
@@ -158,7 +159,7 @@ func (g *Container) Populate() error {
 			continue
 		}
 
-		if err := g.populateExplicit(o); err != nil {
+		if err := g.populateExplicit(o, true); err != nil {
 			return err
 		}
 	}
@@ -178,7 +179,7 @@ func (g *Container) Populate() error {
 			continue
 		}
 
-		if err := g.populateExplicit(o); err != nil {
+		if err := g.populateExplicit(o, true); err != nil {
 			return err
 		}
 	}
@@ -242,7 +243,22 @@ func (g *Container) resolve(dst interface{}, objects ...*Object) error {
 	return errors.New("No provided object is assignable to dst")
 }
 
-func (g *Container) populateExplicit(o *Object) error {
+func (g *Container) PopulateTarget(dst interface{}) error {
+	t := reflect.TypeOf(dst)
+	v := reflect.ValueOf(dst)
+	if t.Name() != "" {
+		return fmt.Errorf("result have to be a point")
+	}
+
+	o := &Object{Value: dst, reflectType: t, reflectValue: v}
+	if err := g.populateExplicit(o, false); err != nil {
+		return err
+	}
+
+	return g.populateUnnamedInterface(o)
+}
+
+func (g *Container) populateExplicit(o *Object, provide bool) error {
 	// Ignore named value types.
 	if o.Name != "" && !isStructPtr(o.reflectType) {
 		return nil
@@ -328,36 +344,6 @@ StructLoop:
 			continue StructLoop
 		}
 
-		// Inline struct values indicate we want to traverse into it, but not
-		// inject itself. We require an explicit "inline" tag for this to work.
-		if fieldType.Kind() == reflect.Struct {
-			if tag.Private {
-				return fmt.Errorf(
-					"cannot use private inject on inline struct on field %s in type %s",
-					o.reflectType.Elem().Field(i).Name,
-					o.reflectType,
-				)
-			}
-
-			if !tag.Inline {
-				return fmt.Errorf(
-					"inline struct on field %s in type %s requires an explicit \"inline\" tag",
-					o.reflectType.Elem().Field(i).Name,
-					o.reflectType,
-				)
-			}
-
-			err := g.Provide(&Object{
-				Value:    field.Addr().Interface(),
-				private:  true,
-				embedded: o.reflectType.Elem().Field(i).Anonymous,
-			})
-			if err != nil {
-				return err
-			}
-			continue
-		}
-
 		// Interface injection is handled in a second pass.
 		if fieldType.Kind() == reflect.Interface {
 			continue
@@ -382,6 +368,38 @@ StructLoop:
 				)
 			}
 			continue
+		}
+
+		// Inline struct values indicate we want to traverse into it, but not
+		// inject itself. We require an explicit "inline" tag for this to work.
+		if fieldType.Kind() == reflect.Struct {
+			if tag.Private {
+				return fmt.Errorf(
+					"cannot use private inject on inline struct on field %s in type %s",
+					o.reflectType.Elem().Field(i).Name,
+					o.reflectType,
+				)
+			}
+
+			if !tag.Inline {
+				return fmt.Errorf(
+					"inline struct on field %s in type %s requires an explicit \"inline\" tag",
+					o.reflectType.Elem().Field(i).Name,
+					o.reflectType,
+				)
+			}
+
+			if provide {
+				err := g.Provide(&Object{
+					Value:    field.Addr().Interface(),
+					private:  true,
+					embedded: o.reflectType.Elem().Field(i).Anonymous,
+				})
+				if err != nil {
+					return err
+				}
+				continue
+			}
 		}
 
 		// Can only inject Pointers from here on.
@@ -423,11 +441,15 @@ StructLoop:
 			created: true,
 		}
 
-		// Add the newly ceated object to the known set of objects.
-		err = g.Provide(newObject)
-		if err != nil {
-			return err
+		if provide {
+			// Add the newly ceated object to the known set of objects.
+			err = g.Provide(newObject)
+			if err != nil {
+				return err
+			}
 		}
+
+		_ = g.PopulateTarget(newObject.Value)
 
 		// Finally assign the newly created object to our field.
 		field.Set(newValue)
