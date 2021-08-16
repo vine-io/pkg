@@ -34,8 +34,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lack-io/pkg/rfs"
 	"github.com/pkg/sftp"
+	"github.com/vine-io/pkg/rfs"
 	"golang.org/x/crypto/ssh"
 )
 

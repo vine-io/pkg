@@ -219,7 +219,7 @@ func (g *Container) ResolveByName(dst interface{}, name string) error {
 	object, ok := g.named[name]
 
 	if !ok {
-		return fmt.Errorf("No provided object with the name: %s", name)
+		return fmt.Errorf("no provided object with the name: %s", name)
 	}
 
 	return g.resolve(dst, object)
@@ -240,7 +240,7 @@ func (g *Container) resolve(dst interface{}, objects ...*Object) error {
 		}
 	}
 
-	return errors.New("No provided object is assignable to dst")
+	return errors.New("no provided object is assignable to dst")
 }
 
 func (g *Container) PopulateTarget(dst interface{}) error {

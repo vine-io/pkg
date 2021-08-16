@@ -1,4 +1,4 @@
-module github.com/lack-io/pkg/rfs
+module github.com/vine-io/pkg/rfs
 
 go 1.16
 

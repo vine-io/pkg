@@ -1,3 +1,3 @@
-module github.com/lack-io/pkg/inject
+module github.com/vine-io/pkg/inject
 
 go 1.16

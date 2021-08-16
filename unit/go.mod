@@ -1,3 +1,3 @@
-module github.com/lack-io/pkg/unit
+module github.com/vine-io/pkg/unit
 
 go 1.16

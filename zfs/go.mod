@@ -1,4 +1,4 @@
-module github.com/lack-io/pkg/zfs
+module github.com/vine-io/pkg/zfs
 
 go 1.16
 

@@ -23,7 +23,7 @@ func TestFromCfgFile(t *testing.T) {
 }
 
 func TestFromKernel(t *testing.T) {
-	root := "/Users/xingyys/project/gopath/src/github.com/lack-io/pkg/"
+	root := "/Users/xingyys/project/gopath/src/github.com/vine-io/pkg/"
 	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err

@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/lack-io/pkg/rfs"
+	"github.com/vine-io/pkg/rfs"
 )
 
 func Test_client_Exec(t *testing.T) {

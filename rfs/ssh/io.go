@@ -29,7 +29,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/lack-io/pkg/rfs"
+	"github.com/vine-io/pkg/rfs"
 	"github.com/pkg/sftp"
 )
 

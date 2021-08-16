@@ -7,7 +7,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/lack-io/pkg/rfs"
+	"github.com/vine-io/pkg/rfs"
 	"github.com/masterzen/winrm"
 )
 
