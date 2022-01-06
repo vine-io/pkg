@@ -20,6 +20,10 @@ type Sub struct {
 	A string
 }
 
+type TestWithName struct {
+	S *Sub `inject:"sub"`
+}
+
 func TestContainer_PopulateTarget(t *testing.T) {
 	g.Provide(&Object{Value: &Sub{A: "a"}})
 
@@ -35,8 +39,26 @@ func TestContainer_Resolve(t *testing.T) {
 	t1 := &Test{Name: "a"}
 	g.Provide(&Object{Value: t1})
 
-	t2 :=&Test{}
+	t2 := &Test{}
 	g.Resolve(t2)
 
 	t.Log(t2)
+}
+
+func TestContainer_ResolveByName(t *testing.T) {
+	sub := &Sub{A: "aa"}
+	if err := g.Provide(&Object{Value: sub, Name: "sub"}); err != nil {
+		t.Fatal(err)
+	}
+
+	tn := &TestWithName{}
+	if err := g.Provide(&Object{Value: tn}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := g.Populate(); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(tn.S)
 }
