@@ -37,12 +37,26 @@ func TestContainer_PopulateTarget(t *testing.T) {
 
 func TestContainer_Resolve(t *testing.T) {
 	t1 := &Test{Name: "a"}
-	g.Provide(&Object{Value: t1})
+	if err := g.Provide(&Object{Value: t1}); err != nil {
+		t.Fatal(err)
+	}
 
-	t2 := &Test{}
-	g.Resolve(t2)
+	//t2 := &Test{}
+	//if err := g.Resolve(t2); err != nil {
+	//	t.Fatal(err)
+	//}
+	//
+	//t3 := new(Test)
+	//if err := g.Resolve(t3); err != nil {
+	//	t.Fatal(err)
+	//}
 
-	t.Log(t2)
+	var t4 *Test
+	if err := g.Resolve(t4); err != nil {
+		t.Fatal(err)
+	}
+
+	//t.Log(t2)
 }
 
 func TestContainer_ResolveByName(t *testing.T) {
