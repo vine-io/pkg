@@ -43,18 +43,24 @@ var _ rfs.Rfs = (*client)(nil)
 
 type client struct {
 	options Options
-
-	cc *ssh.Client
 }
 
 func (c *client) Init() error {
 
 	var err error
-	c.cc, err = ssh.Dial(c.options.network, c.options.addr, &c.options.ClientConfig)
+	_, err = ssh.Dial(c.options.network, c.options.addr, &c.options.ClientConfig)
 	if err != nil {
 		return fmt.Errorf("%w: %v", rfs.ErrConnect, err)
 	}
 	return nil
+}
+
+func (c *client) dial() (*ssh.Client, error) {
+	cc, err := ssh.Dial(c.options.network, c.options.addr, &c.options.ClientConfig)
+	if err != nil {
+		return nil, err
+	}
+	return cc, nil
 }
 
 type singleWriter struct {
@@ -73,10 +79,17 @@ func (c *client) Exec(ctx context.Context, cmd *rfs.Cmd, opts ...rfs.ExecOption)
 		return rfs.ErrEmptyCmd
 	}
 
-	session, err := c.cc.NewSession()
+	cc, err := c.dial()
+	if err != nil {
+		return err
+	}
+	defer cc.Close()
+
+	session, err := cc.NewSession()
 	if err != nil {
 		return fmt.Errorf("%w: %v", rfs.ErrConnect, err)
 	}
+	defer session.Close()
 
 	shell := cmd.Name
 	for _, arg := range cmd.Args {
@@ -119,10 +132,17 @@ func (c *client) Exec(ctx context.Context, cmd *rfs.Cmd, opts ...rfs.ExecOption)
 }
 
 func (c *client) List(ctx context.Context, remotePath string, opts ...rfs.ListOption) ([]os.FileInfo, error) {
-	ftp, err := sftp.NewClient(c.cc)
+	cc, err := c.dial()
+	if err != nil {
+		return nil, err
+	}
+	defer cc.Close()
+
+	ftp, err := sftp.NewClient(cc)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", rfs.ErrConnect, err)
 	}
+	defer ftp.Close()
 
 	var (
 		ech   = make(chan error, 1)
@@ -153,10 +173,17 @@ func (c *client) List(ctx context.Context, remotePath string, opts ...rfs.ListOp
 }
 
 func (c *client) Get(ctx context.Context, remotePath, localPath string, fn rfs.IOFn, opts ...rfs.GetOption) error {
-	ftp, err := sftp.NewClient(c.cc)
+	cc, err := c.dial()
+	if err != nil {
+		return err
+	}
+	defer cc.Close()
+
+	ftp, err := sftp.NewClient(cc)
 	if err != nil {
 		return fmt.Errorf("%w: %v", rfs.ErrConnect, err)
 	}
+	defer ftp.Close()
 
 	stat, err := ftp.Stat(remotePath)
 	if errors.Is(err, os.ErrNotExist) {
@@ -228,10 +255,17 @@ func (c *client) Get(ctx context.Context, remotePath, localPath string, fn rfs.I
 }
 
 func (c *client) Put(ctx context.Context, localPath, remotePath string, fn rfs.IOFn, opts ...rfs.PutOption) error {
-	ftp, err := sftp.NewClient(c.cc)
+	cc, err := c.dial()
+	if err != nil {
+		return err
+	}
+	defer cc.Close()
+
+	ftp, err := sftp.NewClient(cc)
 	if err != nil {
 		return fmt.Errorf("%w: %v", rfs.ErrConnect, err)
 	}
+	defer ftp.Close()
 
 	stat, err := os.Stat(localPath)
 	if errors.Is(err, os.ErrNotExist) {
