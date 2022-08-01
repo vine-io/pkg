@@ -29,8 +29,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/vine-io/pkg/rfs"
 	"github.com/pkg/sftp"
+	"github.com/vine-io/pkg/rfs"
 )
 
 func (c *client) get(
