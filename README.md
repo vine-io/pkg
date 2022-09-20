@@ -8,3 +8,4 @@
 - crypto: 加解密算法的封装
 - release: 获取操作系统的发行版本
 - mstring: 生成随机字符串
+- ceph: ceph 命令行工具封装

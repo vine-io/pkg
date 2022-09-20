@@ -47,11 +47,12 @@ type client struct {
 
 func (c *client) Init() error {
 
-	var err error
-	_, err = ssh.Dial(c.options.network, c.options.addr, &c.options.ClientConfig)
+	conn, err := ssh.Dial(c.options.network, c.options.addr, &c.options.ClientConfig)
 	if err != nil {
 		return fmt.Errorf("%w: %v", rfs.ErrConnect, err)
 	}
+	defer conn.Close()
+
 	return nil
 }
 
