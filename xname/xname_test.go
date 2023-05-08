@@ -16,6 +16,12 @@ func TestGen(t *testing.T) {
 	t.Log(s1)
 }
 
+func TestGen6(t *testing.T) {
+	s1 := Gen6()
+
+	t.Log(s1)
+}
+
 func BenchmarkGen(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Gen(C(10))

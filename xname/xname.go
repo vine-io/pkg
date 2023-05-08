@@ -117,3 +117,7 @@ func Gen(opts ...Option) string {
 	}
 	return out.String()
 }
+
+func Gen6() string {
+	return Gen(C(6), Lowercase(), Digit())
+}
