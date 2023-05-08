@@ -1,4 +1,4 @@
-package mstring
+package xname
 
 import "testing"
 
